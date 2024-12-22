@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Payment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="nav-item" title="Home">
+            <a href="{{ url_for('home') }}">
+                <span class="icon" id="ho">🏠</span>
+                <span class="label">Home</span>
+            </a>
+        </div>
+        <div class="nav-item" title="Calendar">
+            <a href="{{ url_for('calendar') }}">
+                <span class="icon" id="cal">📅</span>
+                <span class="label">Calendar</span>
+            </a>
+        </div>
+    </div>
+
+    <main>
+        <h1>Confirm Your Payment</h1>
+        <p>We sent a confirmation code to your email. Please enter it below to complete the payment.</p>
+
+        <form method="POST" action="{{ url_for('confirm_payment') }}">
+            <label for="confirmation_code">Confirmation Code:</label>
+            <input type="text" id="confirmation_code" name="confirmation_code" required><br><br>
+            <button type="submit">Confirm</button>
+        </form>
+    </main>
+</body>
+</html>

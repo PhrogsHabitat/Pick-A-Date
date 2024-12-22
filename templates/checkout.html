@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="nav-item" title="Home">
+            <a href="{{ url_for('home') }}">
+                <span class="icon" id="ho">🏠</span>
+                <span class="label">Home</span>
+            </a>
+        </div>
+        <div class="nav-item" title="Calendar">
+            <a href="{{ url_for('calendar') }}">
+                <span class="icon" id="cal">📅</span>
+                <span class="label">Calendar</span>
+            </a>
+        </div>
+    </div>
+
+    <main>
+        <h1>Checkout</h1>
+        <p>You have selected the following dates:</p>
+        <ul>
+            {% for date in selected_dates %}
+            <li>Date: {{ date }} (${{ date.split('-')[2] }})</li>
+            {% endfor %}
+        </ul>
+        <p>Total Cost: ${{ total_cost }}</p>
+
+        <form method="POST" action="{{ url_for('checkout') }}">
+            <!-- Send selected dates as a hidden input so the server can process them -->
+            <input type="hidden" name="selected_dates" value="{{ ','.join(selected_dates) }}">
+
+            <head>
+                <title>Buy cool new product</title>
+                <link rel="stylesheet" href="style.css">
+                <script src="https://js.stripe.com/v3/"></script>
+              </head>
+              <body>
+                <section>
+                  <div class="product">
+                    <img src="https://i.imgur.com/EHyR2nP.png" alt="The cover of Stubborn Attachments" />
+                    <div class="description">
+                      <h3>Stubborn Attachments</h3>
+                      <h5>$20.00</h5>
+                    </div>
+                  </div>
+                  <form action="/create-checkout-session" method="POST">
+                    <button type="submit" id="checkout-button">Checkout</button>
+                  </form>
+                </section>
+              </body>
+              
+        </form>
+    </main>
+</body>
+</html>

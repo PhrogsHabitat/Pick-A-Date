@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Confirmation Code</title>
+</head>
+<body>
+    <h1>Enter Your Confirmation Code</h1>
+    <p>A confirmation code has been sent to your email: {{ email }}</p>
+    <form action="{{ url_for('confirm') }}" method="POST">
+        <label for="confirmation_code">Confirmation Code:</label>
+        <input type="text" id="confirmation_code" name="confirmation_code" required>
+        <button type="submit">Confirm</button>
+    </form>
+</body>
+</html>

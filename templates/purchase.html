@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <form id="payment-form">
+        <div id="card-element"></div>
+        <button type="submit">Pay</button>
+    </form>
+    <script>
+        const stripe = Stripe('your-publishable-key-here');
+        const elements = stripe.elements();
+        const card = elements.create('card');
+        card.mount('#card-element');
+
+        const form = document.getElementById('payment-form');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const { token, error } = await stripe.createToken(card);
+            if (error) {
+                console.error(error);
+            } else {
+                // Handle token submission to server
+            }
+        });
+    </script>
+</body>
+</html>

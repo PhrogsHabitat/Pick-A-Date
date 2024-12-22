@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Calendar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>My Calendar</h1>
+        <p>Total Raised: ${{ data['total_raised'] }}</p>
+    </header>
+    <main>
+        <section id="my-calendar">
+            <h2>My Calendar</h2>
+            <p>Select a date below to support C.R.A.S.H. Robotics.</p>
+            <div id="calendar"></div>
+            <button id="cross-off" style="display: none;">Cross Off!</button>
+        </section>
+        <section>
+            <h2>How It Works</h2>
+            <p>Here's how the Pick-a-Date fundraiser works:</p>
+            <ol>
+                <li>Select one or more dates from the calendar. Each date you pick helps us raise money.</li>
+                <li>The cost corresponds to the day you select. For example, day 12 costs $12.</li>
+                <li>After selecting your dates, click "Cross Off" to move to the payment page.</li>
+                <li>On the payment page, fill out your details and complete the process to finalize your donation.</li>
+            </ol>
+            <p>This is a fun and interactive way to support us and see how much progress we make together!</p>
+        </section>
+    </main>
+</body>
+</html>

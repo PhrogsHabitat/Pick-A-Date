@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="sidebar">
+        <div class="nav-item" title="Home">
+            <a href="{{ url_for('home') }}">
+                <span class="icon" id="ho">🏠</span>
+                <span class="label">Home</span>
+            </a>
+        </div>
+        <div class="nav-item" title="Calendar">
+            <a href="{{ url_for('calendar') }}">
+                <span class="icon" id="cal">📅</span>
+                <span class="label">Calendar</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Blue Bar at the top -->
+    <header class="header-bar">
+        <h1>Success!</h1>
+    </header>
+
+    <main>
+        <!-- Success Message Section -->
+        <section class="content-box">
+            <h2 class="section-title">Thank You!</h2>
+            <p>Thank you, <strong>{{ name }}</strong>, for your generous donation of ${{ total_cost }}!</p>
+            <p>Your support is greatly appreciated, and your contribution will help us reach our goal.</p>
+        </section>
+
+        <!-- Payment Details Section -->
+        <section class="content-box">
+            <h2 class="section-title">Your Payment Details</h2>
+            <ul>
+                <li><strong>Name:</strong> {{ name }}</li>
+                <li><strong>Email:</strong> {{ email }}</li>
+                <li><strong>Card Number:</strong> {{ card_number[:4] }}-****-****-****</li>
+                <li><strong>Expiration Date:</strong> {{ expiration_date }}</li>
+                <li><strong>Location:</strong> {{ location }}</li>
+            </ul>
+        </section>
+
+        <!-- Back to Calendar Link -->
+        <section class="content-box">
+            <a href="{{ url_for('calendar') }}" class="button">Return to Calendar</a>
+        </section>
+    </main>
+</body>
+</html>

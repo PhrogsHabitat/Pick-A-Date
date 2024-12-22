@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C.R.A.S.H. Robotics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <header>
+        {% if current_user.is_authenticated %}
+            <img src="{{ url_for('static', filename='profile_pictures/' + current_user.id + '.jpg') }}" alt="Profile Picture">
+        {% else %}
+            <a href="{{ url_for('signup') }}">SIGNUP</a> OR <a href="{{ url_for('login') }}">LOG IN</a>
+        {% endif %}
+    </header>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="sidebar">
+        <div class="nav-item" title="Home">
+            <a href="{{ url_for('home') }}">
+                <span class="icon" id="ho">🏠</span>
+                <span class="label">Home</span>
+            </a>
+        </div>
+        <div class="nav-item" title="Calendar">
+            <a href="{{ url_for('calendar') }}">
+                <span class="icon" id="cal">📅</span>
+                <span class="label">Calendar</span>
+            </a>
+        </div>
+    </div>
+
+    <header>
+        <h1>Welcome to C.R.A.S.H. Robotics!</h1>
+    </header>
+    <main>
+        <section>
+            <h2>About Us</h2>
+            <p>We are a passionate group of robotics enthusiasts dedicated to building, innovating, and competing in the world of robotics.</p>
+            <p>Located in [Your Location], we have achieved [Your Achievements].</p>
+        </section>
+        <section>
+            <h2>Our Fundraising Goal</h2>
+            <p>We are raising funds to build a new workshop equipped with air conditioning and better facilities to support our robotics projects.</p>
+            <p>This new workshop will help us innovate and provide a better environment for our team to grow.</p>
+        </section>
+        <a href="{{ url_for('calendar') }}" class="button">Support Us by Picking a Date</a>
+    </main>
+</body>
+</html>

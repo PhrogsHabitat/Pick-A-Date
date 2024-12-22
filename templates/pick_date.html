@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Pick a Date</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div>
+        {{ form.name.label }}<br>
+        {{ form.name(size=40) }}
+    </div>
+    <div>
+        {{ form.date.label }}<br>
+        {{ form.date() }}
+    </div>
+    <div>
+        {{ form.contribution.label }}<br>
+        {{ form.contribution() }}
+    </div>
+    <div>
+        {{ form.submit() }}
+    </div>
+</form>
+{% endblock %}
