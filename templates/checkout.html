@@ -32,29 +32,15 @@
         </ul>
         <p>Total Cost: ${{ total_cost }}</p>
 
-        <form method="POST" action="{{ url_for('checkout') }}">
-            <!-- Send selected dates as a hidden input so the server can process them -->
-            <input type="hidden" name="selected_dates" value="{{ ','.join(selected_dates) }}">
+                <script async
+          src="https://js.stripe.com/v3/buy-button.js">
+        </script>
 
-            <head>
-                <title>Buy cool new product</title>
-                <link rel="stylesheet" href="style.css">
-                <script src="https://js.stripe.com/v3/"></script>
-              </head>
-              <body>
-                <section>
-                  <div class="product">
-                    <img src="https://i.imgur.com/EHyR2nP.png" alt="The cover of Stubborn Attachments" />
-                    <div class="description">
-                      <h3>Stubborn Attachments</h3>
-                      <h5>$20.00</h5>
-                    </div>
-                  </div>
-                  <form action="/create-checkout-session" method="POST">
-                    <button type="submit" id="checkout-button">Checkout</button>
-                  </form>
-                </section>
-              </body>
+        <stripe-buy-button
+          buy-button-id="buy_btn_1QYwPKCpRmcr6sEEGOUeMZ0g"
+          publishable-key="pk_test_51QJ3wRCpRmcr6sEE7Y6BtDOtKhHL8z9Cycx0RneVX5F4vB4ohLRf6wl778pO6KY1myaz8rNI2vua6oV09ZAxeacc00QEc5BKZP"
+        >
+        </stripe-buy-button>
               
         </form>
     </main>
