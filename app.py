@@ -210,7 +210,11 @@ def logout():
 @app.route('/my_calendar')
 @login_required
 def my_calendar():
-    return render_template('my_calendar.html', user=current_user)
+    # Example data dictionary
+    data = {
+        'total_raised': 1000  # Replace with actual data retrieval logic
+    }
+    return render_template('my_calendar.html', user=current_user, data=data)
 
 @app.route('/purchase', methods=['GET', 'POST'])
 @login_required
