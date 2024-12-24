@@ -8,6 +8,8 @@ import secrets  # For generating random confirmation codes
 import stripe
 import server
 from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required, current_user
+from google_sheets import find_empty
+from google_sheets import change_row
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secret key for sessions
@@ -182,6 +184,9 @@ def signup():
         password = request.form['password']
         user_id = str(len(users) + 1)
         users[user_id] = User(user_id, username, email)
+        
+        change_row(1,find_empty(1),username,password,email)
+        
         return redirect(url_for('login'))
     return render_template('signup.html')
 
@@ -192,7 +197,7 @@ def login():
         password = request.form['password']
         user = next((u for u in users.values() if u.email == email), None)
         if user:
-            login_user(user)
+            current_user = login_user(user)
             return redirect(url_for('my_calendar'))
     return render_template('login.html')
 
