@@ -10,6 +10,9 @@ import server
 from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required, current_user
 from google_sheets import find_empty
 from google_sheets import change_row
+import google_sheets
+from google_sheets import signin
+from google_sheets import get_cell_value
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secret key for sessions
@@ -88,10 +91,21 @@ def home():
 @app.route("/calendar", methods=["GET", "POST"])
 def calendar():
     data = load_data()
+    
+    if current_user.is_authenticated:
+        user_email = current_user.email  # Assuming you have the current user's email
+        user_signed_in = google_sheets.get_cell_value(user_email, "IsSignedIn")
+        user_has_token = google_sheets.get_cell_value(user_email, "HasToken")
+        print(f"user_signed_in: {user_signed_in}, user_has_token: {user_has_token}")  # Debug print
+    else:
+        user_signed_in = "False"
+        user_has_token = "False"
+
     if request.method == "POST":
         selected_dates = request.form.getlist("selected_dates[]")
         return redirect(url_for("checkout", dates=",".join(selected_dates)))
-    return render_template("calendar.html", data=data)
+
+    return render_template("calendar.html", data=data, user_signed_in=user_signed_in, user_has_token=user_has_token)
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
@@ -198,7 +212,10 @@ def login():
         user = next((u for u in users.values() if u.email == email), None)
         if user:
             current_user = login_user(user)
+            signin(email,password)
             return redirect(url_for('my_calendar'))
+
+        
     return render_template('login.html')
 
 @app.route('/logout')
