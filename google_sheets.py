@@ -58,10 +58,14 @@ def get_cell_value(email, column_name):
     headers = worksheet.row_values(1)
     column_index = headers.index(column_name) + 1  # Convert to 1-based index
 
-    for row_index, cell_email in enumerate(email_column, start=2):  # Start from 2 to skip header row
+    print(f"Looking for email: {email} in column: {column_name}")  # Debug print
+
+    for row_index, cell_email in enumerate(email_column, start=1):  # Start from 2 to skip header row
         if cell_email.lower() == email.lower():
             cell_value = worksheet.cell(row_index, column_index).value
+            print(f"Found value: {cell_value} for email: {email} in column: {column_name}")  # Debug print
             return cell_value
+    print(f"No value found for email: {email} in column: {column_name}")  # Debug print
     return None
 
 

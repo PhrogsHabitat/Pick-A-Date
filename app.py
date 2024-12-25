@@ -204,6 +204,34 @@ def signup():
         return redirect(url_for('login'))
     return render_template('signup.html')
 
+@app.route('/grab_token', methods=['GET', 'POST'])
+def payForToken():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        user_id = str(len(users) + 1)
+        users[user_id] = User(user_id, username, email)
+        
+        change_row(1,find_empty(1),username,password,email)
+        
+        return redirect(url_for('login'))
+    return render_template('signup.html')
+
+@app.route('/have_token', methods=['GET', 'POST'])
+def useToken():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        user_id = str(len(users) + 1)
+        users[user_id] = User(user_id, username, email)
+        
+        change_row(1,find_empty(1),username,password,email)
+        
+        return redirect(url_for('login'))
+    return render_template('signup.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -212,6 +240,7 @@ def login():
         user = next((u for u in users.values() if u.email == email), None)
         if user:
             current_user = login_user(user)
+            
             signin(email,password)
             return redirect(url_for('my_calendar'))
 

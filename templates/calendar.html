@@ -14,14 +14,14 @@
     <main>
         <section id="my-calendar">
             <h2>My Calendar</h2>
-            {% if user_signed_in == "True" %}
-                {% if user_has_token == "True" %}
+            {% if user_signed_in == "TRUE" %}
+                {% if user_has_token == "TRUE" %}
                     <p>Your Token: {{ user_has_token }}</p>
                     <div id="calendar"></div>
                 {% else %}
                     <div id="calendar" style="filter: blur(2px);"></div>
-                    <button onclick="location.href='{{ url_for('grab_token') }}'">Grab a token!</button>
-                    <button onclick="location.href='{{ url_for('have_token') }}'">Have a token?</button>
+                    <button onclick="location.href='{{ url_for('payForToken') }}'">Grab a token!</button>
+                    <button onclick="location.href='{{ url_for('useToken') }}'">Have a token?</button>
                 {% endif %}
             {% else %}
                 <div id="calendar" style="filter: blur(2px);"></div>
