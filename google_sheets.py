@@ -68,6 +68,21 @@ def get_cell_value(email, column_name):
     print(f"No value found for email: {email} in column: {column_name}")  # Debug print
     return None
 
+def set_cell_value(email, column_name, value):
+    worksheet = gc.open("Database").sheet1
+    email_column = worksheet.col_values(1)  # Assuming emails are in the first column
+    headers = worksheet.row_values(1)
+    column_index = headers.index(column_name) + 1  # Convert to 1-based index
+
+    print(f"Looking for email: {email} in column: {column_name}")  # Debug print
+
+    for row_index, cell_email in enumerate(email_column, start=1):  # Start from 2 to skip header row
+        if cell_email.lower() == email.lower():
+            worksheet.update_cell(row_index, column_index, value)
+            print(f"Updated value: {value} for email: {email} in column: {column_name}")  # Debug print
+            return
+    print(f"No value found for email: {email} in column: {column_name}")  # Debug print
+
 
 def signin(email, password):
     emailpresent = False
@@ -93,6 +108,8 @@ def signin(email, password):
                 break
     else:
         return False
+    print(emailpresent)
+    print(passwordpresent)
             
         
     

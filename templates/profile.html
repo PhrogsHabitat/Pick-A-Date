@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - C.R.A.S.H. Robotics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="sidebar">
+        <div class="nav-item" title="Home">
+            <a href="{{ url_for('home') }}">
+                <span class="icon" id="ho">🏠</span>
+                <span class="label">Home</span>
+            </a>
+        </div>
+        <div class="nav-item" title="Calendar">
+            <a href="{{ url_for('calendar') }}">
+                <span class="icon" id="cal">📅</span>
+                <span class="label">Calendar</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="top-bar" style="background-color: blue; color: white; padding: 10px; text-align: center;">
+        <h2>This is you!</h2>
+    </div>
+
+    <main>
+        <header>
+            <h1>Your Profile</h1>
+        </header>
+        <div class="profile-info">
+            <img src="{{ url_for('static', filename='profile_pictures/' + current_user.id + '.jpg') }}" alt="Profile Picture">
+            <span>{{ current_user.username }}</span>
+        </div>
+        <div class="logout">
+            <form action="{{ url_for('logout') }}" method="post">
+                <button type="submit">Logout</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

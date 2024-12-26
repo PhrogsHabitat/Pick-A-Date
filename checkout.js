@@ -1,5 +1,5 @@
 // This is your test secret API key.
-const stripe = Stripe("pk_test_51QJ3wRCpRmcr6sEE7Y6BtDOtKhHL8z9Cycx0RneVX5F4vB4ohLRf6wl778pO6KY1myaz8rNI2vua6oV09ZAxeacc00QEc5BKZP");
+const stripe = Stripe("rk_test_51QJ3wRCpRmcr6sEEmKahNgqFjDOreuGrSTW9pMlNH4BMjPcfJOWbmsaxKOPkSj8tNjhKzjGcyLUs8PoOsAb07p8s008wNu9UXY");
 
 initialize();
 

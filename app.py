@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, request
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -6,6 +6,7 @@ import os
 import json
 import secrets  # For generating random confirmation codes
 import stripe
+from stripe.error import SignatureVerificationError
 import server
 from flask_login import UserMixin, LoginManager, login_user, logout_user, login_required, current_user
 from google_sheets import find_empty
@@ -16,12 +17,14 @@ from google_sheets import get_cell_value
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secret key for sessions
-server.api_key = 'sk_test_51QJ3wRCpRmcr6sEEJUBCs4vLrPYjMvugUeTfVvmMjZAIMW1MenvZyGWxQccsui3sJB8FTeWfaoeFFcd28qmJzqM700WPzokPVL'
+stripe.api_key = 'sk_test_51QJ3wRCpRmcr6sEEJUBCs4vLrPYjMvugUeTfVvmMjZAIMW1MenvZyGWxQccsui3sJB8FTeWfaoeFFcd28qmJzqM700WPzokPVL'
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+global loggedIn 
+loggedIn = False
 users = {}  # This should be replaced with a database in a real application
 
 @login_manager.user_loader
@@ -38,6 +41,7 @@ class User(UserMixin):
 
     def get_id(self):
         return self.id
+
 
 
 
@@ -96,16 +100,28 @@ def calendar():
         user_email = current_user.email  # Assuming you have the current user's email
         user_signed_in = google_sheets.get_cell_value(user_email, "IsSignedIn")
         user_has_token = google_sheets.get_cell_value(user_email, "HasToken")
-        print(f"user_signed_in: {user_signed_in}, user_has_token: {user_has_token}")  # Debug print
+        token_type = google_sheets.get_cell_value(user_email, "TokenType")
+        cal_title = google_sheets.get_cell_value(user_email, "CAL-Title") or "My Calendar"
+        
+        if request.method == "POST":
+            new_title = request.form.get("calendar_title")
+            if new_title:
+                google_sheets.set_cell_value(user_email, "CAL-Title", new_title)
+                cal_title = new_title
+                return render_template("calendar.html", data=data, user_signed_in=user_signed_in, user_has_token=user_has_token, token_type=token_type, cal_title=cal_title)
+
+        print(f"user_signed_in: {user_signed_in}, user_has_token: {user_has_token}, token_type: {token_type}, cal_title: {cal_title}")  # Debug print
     else:
         user_signed_in = "False"
         user_has_token = "False"
+        token_type = ""
+        cal_title = "My Calendar"
 
     if request.method == "POST":
         selected_dates = request.form.getlist("selected_dates[]")
         return redirect(url_for("checkout", dates=",".join(selected_dates)))
 
-    return render_template("calendar.html", data=data, user_signed_in=user_signed_in, user_has_token=user_has_token)
+    return render_template("calendar.html", data=data, user_signed_in=user_signed_in, user_has_token=user_has_token, token_type=token_type, cal_title=cal_title)
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
@@ -197,11 +213,13 @@ def signup():
         email = request.form['email']
         password = request.form['password']
         user_id = str(len(users) + 1)
-        users[user_id] = User(user_id, username, email)
+        user = User(user_id, username, email)
+        users[user_id] = user
         
-        change_row(1,find_empty(1),username,password,email)
+        change_row(1, find_empty(1), username, password, email)
         
-        return redirect(url_for('login'))
+        login_user(user)  # Log in the user
+        return redirect(url_for('calendar'))
     return render_template('signup.html')
 
 @app.route('/grab_token', methods=['GET', 'POST'])
@@ -237,18 +255,29 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        user = next((u for u in users.values() if u.email == email), None)
-        if user:
-            current_user = login_user(user)
-            
-            signin(email,password)
-            return redirect(url_for('my_calendar'))
-
         
+        username = get_cell_value(email, "Username")
+        passwordPresent = get_cell_value(email, "Password")
+        
+        if username and passwordPresent == password:
+            user_id = str(len(users) + 1)
+            user = User(user_id, username, email)
+            users[user_id] = user
+            
+            signin(email, password)
+            login_user(user)  # Log in the user
+            return redirect(url_for('calendar'))
+    
     return render_template('login.html')
+    
 
-@app.route('/logout')
-@login_required
+@app.route('/profile')
+def profile():
+    if current_user.is_authenticated:
+        return render_template('profile.html')
+    return redirect(url_for('login'))
+
+@app.route('/logout', methods=['POST'])
 def logout():
     logout_user()
     return redirect(url_for('home'))
@@ -283,7 +312,7 @@ if __name__ == '__main__':
     
 #_______________________________________
 
-YOUR_DOMAIN = 'http://localhost:4242'
+YOUR_DOMAIN = 'http://localhost:5000'
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -304,3 +333,29 @@ def create_checkout_session():
         return str(e)
 
     return redirect(checkout_session.url, code=303)
+
+@app.route('/create-payment-link', methods=['POST'])
+def create_payment_link():
+    plentitude = request.form.get('tokenGETs')
+    try:
+        payment_link = stripe.PaymentLink.create(
+            line_items=[
+                {
+                    'price': 'price_1QQfi6CpRmcr6sEEz18vGzJ9',  # Replace with your actual price ID
+                    'quantity': plentitude,
+                },
+            ],
+            after_completion={
+                'type': 'redirect',
+                'redirect': {
+                    'url': "http://127.0.0.1/5000" + '/calendar.html',
+                },
+            },
+            metadata={
+                'user_id': current_user.id,  # Pass the user ID
+                'tokens': plentitude  # Pass the number of tokens to issue
+            }
+        )
+        return jsonify({'url': payment_link.url})
+    except Exception as e:
+        return jsonify({'error': str(e)})
