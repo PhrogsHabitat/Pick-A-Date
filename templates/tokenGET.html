@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Token</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            text-align: center;
+        }
+        #header {
+            background-color: blue;
+            color: white;
+            padding: 20px;
+        }
+        .token-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .token-box {
+            width: 200px;
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Set up your Tokens!</h1>
+    </div>
+    {% if current_user.is_authenticated and session.get('payment_success') %}
+        <div id="token-modal">
+            <h2>Customize Your Tokens</h2>
+            <p>You have {{ session.get('tokens') }} tokens and {{ session.get('subtokens') }} subtokens.</p>
+            <form action="/customize_tokens" method="POST" id="token-form">
+                <div id="subtoken-customization" class="token-container">
+                    {% for token in range(session.get('tokens')|int) %}
+                        <div class="token-box">
+                            <h3>Token {{ token + 1 }}</h3>
+                            <label for="subtoken-{{ token }}">Subtokens:</label>
+                            <input type="number" id="subtoken-{{ token }}" name="subtoken_{{ token }}" min="0" max="{{ session.get('subtokens')|int }}" class="subtoken-input">
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="submit">Save Customizations</button>
+            </form>
+        </div>
+    {% else %}
+        <p>Please log in and complete the payment to customize your tokens.</p>
+    {% endif %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const subtokenInputs = document.querySelectorAll('.subtoken-input');
+            const maxSubtokens = {{ session.get('subtokens')|int }};
+            let totalSubtokens = 0;
+
+            subtokenInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    totalSubtokens = Array.from(subtokenInputs).reduce((sum, input) => sum + (parseInt(input.value) || 0), 0);
+                    if (totalSubtokens > maxSubtokens) {
+                        input.value = maxSubtokens - (totalSubtokens - (parseInt(input.value) || 0));
+                        totalSubtokens = maxSubtokens;
+                    }
+                    subtokenInputs.forEach(input => {
+                        input.max = maxSubtokens - totalSubtokens + (parseInt(input.value) || 0);
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

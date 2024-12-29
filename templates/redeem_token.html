@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redeem Token</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div id="dim-overlay"></div>
+    <div id="token-submenu" class="submenu">
+        <div class="submenu-header">
+            <h2>Guess what? Action approved!</h2>
+        </div>
+        <div class="submenu-content">
+            <form method="POST" action="{{ url_for('redeem_token') }}">
+                <button type="submit">Redeem Token</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

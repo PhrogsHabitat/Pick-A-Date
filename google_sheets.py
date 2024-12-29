@@ -1,8 +1,9 @@
 import gspread
 from google.oauth2.service_account import Credentials
+from oauth2client.service_account import ServiceAccountCredentials
 
 # Path to your service account JSON key
-SERVICE_ACCOUNT_FILE = r"C:\Users\lesta\OneDrive\Documents\Trent's Python\Pick-A-Date\database-445718-b3f994a39306.json"
+SERVICE_ACCOUNT_FILE = r"database-445718-b3f994a39306.json"
 
 # Define the scope
 SCOPES = [
@@ -10,8 +11,23 @@ SCOPES = [
     'https://www.googleapis.com/auth/drive'
 ]
 
+# Initialize the cache
+cache = {}
+
+# Preload Google Sheets data
+def preload_google_sheets():
+    global cache
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name("database-445718-b3f994a39306.json", scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("Database").sheet1
+    expected_headers = ["Email", "Token", "Xtra", "HasToken"]  # Adjust this list based on your actual headers
+    data = sheet.get_all_records(expected_headers=expected_headers)
+    cache = {row['Email']: row for row in data}
+
 # Authenticate and initialize gspread
-credentials = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+credentials = ServiceAccountCredentials.from_json_keyfile_name("database-445718-b3f994a39306.json", scope)
 gc = gspread.authorize(credentials)
 
 # Open the Google Sheet by name or URL
@@ -31,8 +47,8 @@ def find_empty(col):
     column_values = worksheet.col_values(col)  # Change the column index if needed
     for index, value in enumerate(column_values):
         # print(f'Row {index + 1}: "{value}"')  # Debugging: print each cell value
-        if value.strip() == '':
-            # print(f'Empty cell found at row {index + 1}')
+        if not value:
+            print(f'Empty cell found at row {index + 1}')
             empty_column = index + 1
             return empty_column
             
@@ -52,37 +68,24 @@ def change_row(col, row, username, password, email):
         worksheet.update_cell(row, col + 1, username)
         worksheet.update_cell(row, col + 2, password)
 
+# Get cell value from cache
 def get_cell_value(email, column_name):
-    worksheet = gc.open("Database").sheet1
-    email_column = worksheet.col_values(1)  # Assuming emails are in the first column
-    headers = worksheet.row_values(1)
-    column_index = headers.index(column_name) + 1  # Convert to 1-based index
+    global cache
+    if email not in cache:
+        preload_google_sheets()
+    return cache[email].get(column_name, "")
 
-    print(f"Looking for email: {email} in column: {column_name}")  # Debug print
-
-    for row_index, cell_email in enumerate(email_column, start=1):  # Start from 2 to skip header row
-        if cell_email.lower() == email.lower():
-            cell_value = worksheet.cell(row_index, column_index).value
-            print(f"Found value: {cell_value} for email: {email} in column: {column_name}")  # Debug print
-            return cell_value
-    print(f"No value found for email: {email} in column: {column_name}")  # Debug print
-    return None
-
+# Set cell value and refresh cache
 def set_cell_value(email, column_name, value):
-    worksheet = gc.open("Database").sheet1
-    email_column = worksheet.col_values(1)  # Assuming emails are in the first column
-    headers = worksheet.row_values(1)
-    column_index = headers.index(column_name) + 1  # Convert to 1-based index
-
-    print(f"Looking for email: {email} in column: {column_name}")  # Debug print
-
-    for row_index, cell_email in enumerate(email_column, start=1):  # Start from 2 to skip header row
-        if cell_email.lower() == email.lower():
-            worksheet.update_cell(row_index, column_index, value)
-            print(f"Updated value: {value} for email: {email} in column: {column_name}")  # Debug print
-            return
-    print(f"No value found for email: {email} in column: {column_name}")  # Debug print
-
+    global cache
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name("database-445718-b3f994a39306.json", scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("Database").sheet1
+    cell = sheet.find(email)
+    col_index = sheet.find(column_name).col
+    sheet.update_cell(cell.row, col_index, value)
+    preload_google_sheets()
 
 def signin(email, password):
     emailpresent = False
@@ -110,9 +113,6 @@ def signin(email, password):
         return False
     print(emailpresent)
     print(passwordpresent)
-            
-        
-    
 
-
-    
+# Call preload_google_sheets at startup
+preload_google_sheets()

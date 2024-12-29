@@ -145,7 +145,7 @@ main {
 }
 
 .date.selected {
-    background-color: blue;
+    background-color: #0078d4;
     color: white;
 }
 
@@ -192,7 +192,7 @@ main {
 }
 
 .date.selected {
-    background-color: blue;
+    background-color: #0078d4;
     color: white;
 }
 
@@ -296,7 +296,7 @@ button:disabled {
 }
 
 .date.selected {
-    background-color: blue;
+    background-color: #0078d4;
     color: white;
 }
 

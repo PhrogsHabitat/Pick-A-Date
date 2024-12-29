@@ -15,9 +15,18 @@ import google_sheets
 from google_sheets import signin
 from google_sheets import get_cell_value
 
+from itsdangerous import URLSafeTimedSerializer
+
+
+
+import random
+import string
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secret key for sessions
 stripe.api_key = 'sk_test_51QJ3wRCpRmcr6sEEJUBCs4vLrPYjMvugUeTfVvmMjZAIMW1MenvZyGWxQccsui3sJB8FTeWfaoeFFcd28qmJzqM700WPzokPVL'
+s = URLSafeTimedSerializer(app.secret_key)
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -61,32 +70,20 @@ def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# Function to send email using Gmail SMTP
-def send_email(to_email, subject, content):
+def send_email(to, subject, body):
     sender_email = "phrogshabitat2009@gmail.com"  
     app_password = "uktv uinw huiq edfk"  
 
-    # Check if the email is None or empty
-    #if not to_email:
-        # raise ValueError("No email provided")
-    
-    # Set up the MIME
     msg = MIMEMultipart()
     msg['From'] = sender_email
-    msg['To'] = to_email
+    msg['To'] = to
     msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'html'))
 
-    # Attach the email content
-    msg.attach(MIMEText(content, 'html'))
-
-    try:
-        # Connect to Gmail's SMTP server
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(sender_email, app_password)
-            server.sendmail(sender_email, to_email, msg.as_string())
-        print("Email sent successfully!")
-    except Exception as e:
-        print(f"Failed to send email: {e}")
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(sender_email, app_password)
+        server.sendmail(sender_email, to, msg.as_string())
+    print("Email sent successfully!")
 
 @app.route("/")
 def home():
@@ -277,6 +274,15 @@ def profile():
         return render_template('profile.html')
     return redirect(url_for('login'))
 
+
+@app.route('/tokenGET')
+@login_required
+def tokenGET():
+    if current_user.is_authenticated:
+        return render_template('tokenGET.html')
+    return redirect(url_for('login'))
+
+
 @app.route('/logout', methods=['POST'])
 def logout():
     logout_user()
@@ -312,7 +318,7 @@ if __name__ == '__main__':
     
 #_______________________________________
 
-YOUR_DOMAIN = 'http://localhost:5000'
+YOUR_DOMAIN = 'http://127.0.0.1:5000'
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
@@ -336,26 +342,183 @@ def create_checkout_session():
 
 @app.route('/create-payment-link', methods=['POST'])
 def create_payment_link():
-    plentitude = request.form.get('tokenGETs')
+    tokens = request.form.get('tokens')
+    subtokens = request.form.get('subtokens')
+    
+    if tokens is None or subtokens is None:
+        return "Tokens or Subtokens not provided", 400
+    
+    tokens = int(tokens)
+    subtokens = int(subtokens)
+    
     try:
         payment_link = stripe.PaymentLink.create(
             line_items=[
                 {
                     'price': 'price_1QQfi6CpRmcr6sEEz18vGzJ9',  # Replace with your actual price ID
-                    'quantity': plentitude,
+                    'quantity': tokens + subtokens,
                 },
             ],
             after_completion={
                 'type': 'redirect',
                 'redirect': {
-                    'url': "http://127.0.0.1/5000" + '/calendar.html',
+                    'url': YOUR_DOMAIN + '/tokenGET',
                 },
             },
             metadata={
                 'user_id': current_user.id,  # Pass the user ID
-                'tokens': plentitude  # Pass the number of tokens to issue
+                'tokens': tokens,  # Pass the number of tokens to issue
+                'subtokens': subtokens  # Pass the number of subtokens to issue
             }
         )
-        return jsonify({'url': payment_link.url})
+        session['payment_success'] = True
+        session['tokens'] = tokens
+        session['subtokens'] = subtokens
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return str(e)
+    return redirect(payment_link.url, code=303)
+
+
+@app.route('/customize_tokens', methods=['POST'])
+@login_required
+def customize_tokens():
+    tokens = session.get('tokens')
+    subtokens = session.get('subtokens')
+    
+    if tokens is None or subtokens is None:
+        return "Tokens or Subtokens not provided", 400
+    
+    tokens = int(tokens)
+    subtokens = int(subtokens)
+    
+    try:
+        # Generate tokens and subtokens based on user input
+        user_token = generate_token()
+        extra_tokens = [generate_token() for _ in range(tokens - 1)]
+        all_tokens = [user_token] + extra_tokens
+        
+        all_subtokens = []
+        for i in range(tokens):
+            subtoken_count = int(request.form.get(f'subtoken_{i}', 0))
+            all_subtokens.extend([generate_subtoken(all_tokens[i]) for _ in range(subtoken_count)])
+        
+        # Save tokens and subtokens to Google Sheets
+        user_email = current_user.email
+        google_sheets.set_cell_value(user_email, "Token", user_token)
+        google_sheets.set_cell_value(user_email, "Xtra", ','.join(extra_tokens + all_subtokens))
+        google_sheets.set_cell_value(user_email, "HasToken", "TRUE")
+        
+        return redirect(url_for('calendar'))
+    except Exception as e:
+        return str(e), 500
+    
+    
+def generate_token():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+
+def generate_subtoken(parent_token):
+    return parent_token[:6] + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
+
+
+@app.route('/verify-email/<token>', methods=['GET'])
+def verify_email(token):
+    try:
+        data = s.loads(token, salt='email-verify', max_age=3600)
+        session['verified_email'] = data['email']
+        session['verified_token'] = data['token']
+        return redirect(url_for('redeem_token'))
+    except Exception as e:
+        return str(e), 400
+    
+@app.route('/send-verification-email', methods=['POST'])
+def send_verification_email():
+    email = request.json.get('email')
+    token = request.json.get('token')
+    try:
+        verification_link = generate_verification_link(email, token)
+        email_body = f"""
+        <p>Please click the link below to verify your token:</p>
+        <a href="{verification_link}">Verify Token</a>
+        """
+        send_email(email, "Token Verification", email_body)
+        return jsonify(success=True)
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+        return jsonify(success=False)
+
+    
+    
+def generate_verification_link(email, token):
+    token = s.dumps({'email': email, 'token': token}, salt='email-verify')
+    return url_for('verify_email', token=token, _external=True)
+
+
+@app.route('/verify-token', methods=['POST'])
+def verify_token():
+    token = request.json.get('token')
+    google_sheets.preload_google_sheets()  # Re-preload the database
+    for email, data in google_sheets.cache.items():
+        if token == data.get('Token') or token in data.get('Xtra', '').split(','):
+            session['redeemer_email'] = current_user.email
+            session['owner_email'] = email
+            session['verified_token'] = token  # Ensure this line is present
+            app.logger.debug(f"Session set: Redeemer Email: {session['redeemer_email']}, Owner Email: {session['owner_email']}, Token: {session['verified_token']}")
+            return jsonify(success=True, token=token, email=email)
+    return jsonify(success=False)
+
+@app.route('/redeem-token', methods=['GET', 'POST'])
+@login_required
+def redeem_token():
+    if request.method == 'POST':
+        email = session.get('verified_email')
+        token = session.get('verified_token')
+        if email and token:
+            google_sheets.set_cell_value(current_user.email, "Token", token)
+            google_sheets.preload_google_sheets()
+            return redirect(url_for('calendar'))
+        else:
+            return "Verification failed", 400
+    return render_template('redeem_token.html')
+
+
+@app.route('/check-approval-status', methods=['POST'])
+def check_approval_status():
+    token = request.json.get('token')
+    google_sheets.preload_google_sheets()  # Re-preload the database
+    for email, data in google_sheets.cache.items():
+        if token == data.get('Token'):
+            google_sheets.set_cell_value(current_user.email, "Token", token)
+            google_sheets.set_cell_value(current_user.email, "HasToken", "TRUE")
+            google_sheets.preload_google_sheets()  # Re-preload the database
+            return jsonify(approved=True)
+    return jsonify(approved=False)
+
+
+# ...existing code...
+
+@app.route('/confirm-redemption', methods=['GET', 'POST'])
+@login_required
+def confirm_redemption():
+    if request.method == 'POST':
+        redeemer_email = session.get('redeemer_email')
+        token = session.get('verified_token')
+        owner_email = session.get('owner_email')
+        
+        # Add logging to debug
+        app.logger.debug(f"Redeemer Email: {redeemer_email}, Token: {token}, Owner Email: {owner_email}")
+        
+        if redeemer_email and token and owner_email:
+            google_sheets.set_cell_value(redeemer_email, "Token", token)
+            xtra_tokens = google_sheets.get_cell_value(owner_email, "Xtra").split(',')
+            xtra_tokens.remove(token)
+            google_sheets.set_cell_value(owner_email, "Xtra", ','.join(xtra_tokens))
+            google_sheets.preload_google_sheets()
+            session['redemption_approved'] = True
+            return jsonify(success=True, redirect_url=url_for('calendar'))
+        return jsonify(success=False)
+    else:
+        redeemer_email = session.get('redeemer_email')
+        return render_template('redeem_token.html', redemption_approved=session.get('redemption_approved', False))
+
+# ...existing code...
