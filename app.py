@@ -14,6 +14,8 @@ from google_sheets import change_row
 import google_sheets
 from google_sheets import signin
 from google_sheets import get_cell_value
+from werkzeug.utils import secure_filename
+import re  # Ensure re is imported
 
 from itsdangerous import URLSafeTimedSerializer
 
@@ -43,10 +45,11 @@ def load_user(user_id):
 YOUR_DOMAIN = 'http://127.0.0.1:5000'
 
 class User(UserMixin):
-    def __init__(self, id, username, email):
+    def __init__(self, id, username, email, profile_picture=None):
         self.id = id
         self.username = username
         self.email = email
+        self.profile_picture = profile_picture
 
     def get_id(self):
         return self.id
@@ -56,6 +59,16 @@ class User(UserMixin):
 
 # JSON data file
 DATA_FILE = "data.json"
+
+sillyFellaAutoLogin = True
+
+global redeem_check 
+redeem_check = False
+
+# Define the upload folder and allowed extensions
+UPLOAD_FOLDER = 'static/profile_pictures'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Ensure the data.json file exists with necessary keys
 if not os.path.exists(DATA_FILE):
@@ -203,6 +216,16 @@ def confirm():
 def thank_you():
     return render_template("thank_you.html")
 
+def load_user_data():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_user_data(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -214,6 +237,15 @@ def signup():
         users[user_id] = user
         
         change_row(1, find_empty(1), username, password, email)
+        
+        # Save user data to JSON file
+        user_data = load_user_data()
+        user_data[user_id] = {
+            'username': username,
+            'email': email,
+            'profile_picture': None
+        }
+        save_user_data(user_data)
         
         login_user(user)  # Log in the user
         return redirect(url_for('calendar'))
@@ -250,6 +282,9 @@ def useToken():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        
+        
+        
         email = request.form['email']
         password = request.form['password']
         
@@ -263,15 +298,23 @@ def login():
             
             signin(email, password)
             login_user(user)  # Log in the user
+            
+            # Load user data from JSON file
+            user_data = load_user_data()
+            if user_id in user_data:
+                user.profile_picture = user_data[user_id].get('profile_picture')
+            
             return redirect(url_for('calendar'))
     
-    return render_template('login.html')
+    return render_template('login.html', sillyFellaAutoLogin=sillyFellaAutoLogin)
     
 
 @app.route('/profile')
 def profile():
     if current_user.is_authenticated:
-        return render_template('profile.html')
+        user_data = load_user_data()
+        profile_picture = user_data.get(current_user.id, {}).get('profile_picture')
+        return render_template('profile.html', profile_picture=profile_picture)
     return redirect(url_for('login'))
 
 
@@ -279,6 +322,10 @@ def profile():
 @login_required
 def tokenGET():
     if current_user.is_authenticated:
+        if session.get('payment_success'):
+            google_sheets.set_cell_value(current_user.email, "PAYUP", "PAIDUP")
+        else:
+            google_sheets.set_cell_value(current_user.email, "PAYUP", "NOTPAIDUP")
         return render_template('tokenGET.html')
     return redirect(url_for('login'))
 
@@ -322,6 +369,7 @@ YOUR_DOMAIN = 'http://127.0.0.1:5000'
 
 @app.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
+    Eris = "True"
     try:
         checkout_session = stripe.checkout.Session.create(
             line_items=[
@@ -344,12 +392,23 @@ def create_checkout_session():
 def create_payment_link():
     tokens = request.form.get('tokens')
     subtokens = request.form.get('subtokens')
-    
-    if tokens is None or subtokens is None:
-        return "Tokens or Subtokens not provided", 400
+    email = current_user.email
+    HasPAIDUP = get_cell_value(email, "PAYUP")
     
     tokens = int(tokens)
     subtokens = int(subtokens)
+
+    if HasPAIDUP == "PAIDUP":
+        return render_template('tokenGET.html', tokens=tokens, subtokens=subtokens, user_id=current_user.id)
+    
+
+
+    if tokens is None or subtokens is None:
+        return "Tokens or Subtokens not provided", 400
+    
+    
+    
+    
     
     try:
         payment_link = stripe.PaymentLink.create(
@@ -414,10 +473,10 @@ def customize_tokens():
     
     
 def generate_token():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+    return "DOM-"+(''.join((random.choices(string.ascii_uppercase + string.digits, k=12))))
 
 def generate_subtoken(parent_token):
-    return parent_token[:6] + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    return "SUB-"+''.join(parent_token[4:7] + ''.join(random.choices(string.ascii_uppercase + string.digits, k=9)))
 
 
 
@@ -454,6 +513,10 @@ def generate_verification_link(email, token):
     return url_for('verify_email', token=token, _external=True)
 
 
+
+
+# ...existing code...
+
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
     token = request.json.get('token')
@@ -471,27 +534,31 @@ def verify_token():
 @login_required
 def redeem_token():
     if request.method == 'POST':
-        email = session.get('verified_email')
+        redeemer_email = session.get('redeemer_email')
         token = session.get('verified_token')
+        email = current_user.email
+        app.logger.debug(f"Redeem Token POST: Redeemer Email: {redeemer_email}, Token: {token}, Current User Email: {email}")
         if email and token:
-            google_sheets.set_cell_value(current_user.email, "Token", token)
+            google_sheets.set_cell_value(redeemer_email, "HasToken", "TRUE")
             google_sheets.preload_google_sheets()
             return redirect(url_for('calendar'))
         else:
             return "Verification failed", 400
-    return render_template('redeem_token.html')
-
+    else:
+        redeemer_email = session.get('redeemer_email')
+        app.logger.debug(f"Redeem Token GET: Redeemer Email: {redeemer_email}")
+    return render_template('redeem_token.html', redeemer_email=redeemer_email)
 
 @app.route('/check-approval-status', methods=['POST'])
 def check_approval_status():
     token = request.json.get('token')
-    google_sheets.preload_google_sheets()  # Re-preload the database
     for email, data in google_sheets.cache.items():
-        if token == data.get('Token'):
-            google_sheets.set_cell_value(current_user.email, "Token", token)
-            google_sheets.set_cell_value(current_user.email, "HasToken", "TRUE")
-            google_sheets.preload_google_sheets()  # Re-preload the database
-            return jsonify(approved=True)
+        if token == data.get('Token') or token in data.get('Xtra', '').split(','):
+            if session.get('verified_email') == email and session.get('verified_token') == token:
+                google_sheets.set_cell_value(current_user.email, "Token", token)
+                google_sheets.set_cell_value(current_user.email, "HasToken", "TRUE")
+                google_sheets.preload_google_sheets()  # Re-preload the database
+                return jsonify(approved=True)
     return jsonify(approved=False)
 
 
@@ -521,4 +588,31 @@ def confirm_redemption():
         redeemer_email = session.get('redeemer_email')
         return render_template('redeem_token.html', redemption_approved=session.get('redemption_approved', False))
 
-# ...existing code...
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload-profile-picture', methods=['POST'])
+@login_required
+def upload_profile_picture():
+    if 'profile_picture' not in request.files:
+        return redirect(url_for('profile'))
+
+    file = request.files['profile_picture']
+    if file.filename == '':
+        return redirect(url_for('profile'))
+
+    if file and allowed_file(file.filename):
+        filename = secure_filename(f"{current_user.email}.jpg")
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        
+        # Save the profile picture filename in the JSON file
+        user_data = load_user_data()
+        user_data[current_user.email]['profile_picture'] = filename
+        save_user_data(user_data)
+        
+        current_user.profile_picture = filename
+        return redirect(url_for('profile'))
+
+    return redirect(url_for('profile'))

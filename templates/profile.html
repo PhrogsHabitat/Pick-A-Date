@@ -32,9 +32,13 @@
             <h1>Your Profile</h1>
         </header>
         <div class="profile-info">
-            <img src="{{ url_for('static', filename='profile_pictures/' + current_user.id + '.jpg') }}" alt="Profile Picture">
+            <img src="{{ url_for('static', filename='profile_pictures/' + current_user.email + '.jpg') }}" alt="Profile Picture">
             <span>{{ current_user.username }}</span>
         </div>
+        <form action="{{ url_for('upload_profile_picture') }}" method="post" enctype="multipart/form-data">
+            <input type="file" name="profile_picture" accept="image/*">
+            <button type="submit">Upload</button>
+        </form>
         <div class="logout">
             <form action="{{ url_for('logout') }}" method="post">
                 <button type="submit">Logout</button>

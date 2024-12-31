@@ -10,9 +10,10 @@
     <div id="dim-overlay"></div>
     <div id="token-submenu" class="submenu">
         <div class="submenu-header">
-            <h2>Guess what? Action approved!</h2>
+            <h2>Guess what? You can close this window!</h2>
         </div>
         <div class="submenu-content">
+            <p>Email: {{ redeemer_email }}</p>
             <form method="POST" action="{{ url_for('redeem_token') }}">
                 <button type="submit">Redeem Token</button>
             </form>

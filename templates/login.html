@@ -7,8 +7,8 @@
 </head>
 <body>
     <form method="POST">
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
+        <input type="email" id="email" name="email" value="{{ 'hypertrent7@gmail.com' if sillyFellaAutoLogin else '' }}" required>
+        <input type="password" id="password" name="password" value="{{ 'Azeral123!' if sillyFellaAutoLogin else '' }}" required>
         <button type="submit">Log In</button>
     </form>
 </body>

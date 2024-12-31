@@ -199,7 +199,7 @@
                         if (data.approved) {
                             clearInterval(interval);
                             document.getElementById('token-submenu').querySelector('.submenu-header h2').textContent = 'Guess what? Action approved!';
-                            window.location.href = "{{ url_for('signup') }}"
+                            window.location.href = "{{ url_for('calendar') }}"
                         }
                     });
                 }, 5000); // Poll every 5 seconds
