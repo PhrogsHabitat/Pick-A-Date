@@ -5,9 +5,143 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Calendar</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        #customization-panel {
+            display: none;
+            margin: 20px auto;
+            max-width: 500px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        #customization-panel.open {
+            display: block;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #customization-panel label {
+            font-weight: bold;
+            color: #0078d4;
+            margin-top: 10px;
+            display: block;
+        }
+
+        #customization-panel input[type="color"],
+        #customization-panel input[type="file"] {
+            width: 100%;
+            margin: 10px 0;
+            padding: 5px;
+            font-size: 1rem;
+        }
+
+        #customization-panel button {
+            width: 100%;
+            padding: 10px;
+            background: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        #customization-panel button:hover {
+            background-color: #005ea6;
+            transform: scale(1.05);
+        }
+
+        #calendar-preview {
+            padding: 20px;
+            border: 2px solid #0078d4;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+            background-color: #eaf2f8;
+            transition: border-color 0.3s ease, color 0.3s ease;
+        }
+
+        #calendar-preview img {
+            max-height: 50px;
+            margin-bottom: 10px;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /* Sidebar Styles */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 60px;
+        height: 100%;
+        background: #2c3e50;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow: hidden;
+        transition: width 1s ease; /* Smooth width transition */
+    }
+
+    .sidebar.expand {
+        width: 100%; /* Full width expansion */
+    }
+
+    /* Overlay Background */
+    .nav-fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: transparent;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+        transition: background-color 1s ease; /* Smooth background transition */
+        pointer-events: none;
+    }
+
+    .nav-fullscreen.show {
+        background-color: rgba(44, 62, 80, 1); /* Full color background */
+        pointer-events: auto;
+    }
+
+    /* Customization Panel */
+    .customization-panel {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 100%;
+        opacity: 0; /* Start hidden */
+        visibility: hidden;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+</style>
+
 </head>
 <body>
-    <!-- Navigation Bar -->
     <div class="sidebar">
         <div class="nav-item" title="Home">
             <a href="{{ url_for('home') }}">
@@ -21,12 +155,154 @@
                 <span class="label">Calendar</span>
             </a>
         </div>
+        {% if token_type == "DOM" %}
+    <div class="nav-item" title="Calendar Builder" id="builder-icon">
+        <span class="icon">⚙️</span>
+        <span class="label">Calendar Builder</span>
+    </div>
+    {% endif %}
     </div>
 
     <header>
         <h1>My Calendar</h1>
         <p>Total Raised: ${{ data['total_raised'] }}</p>
     </header>
+
+
+
+
+
+
+
+
+
+<!-- Fullscreen Customization Overlay -->
+<div id="builder-overlay" class="nav-fullscreen">
+    <div class="customization-panel">
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('customize_calendar') }}">
+            <label for="text_color">Text Color:</label>
+            <input type="color" id="text_color" name="text_color">
+
+            <label for="border_color">Border Color:</label>
+            <input type="color" id="border_color" name="border_color">
+
+            <label for="font_style">Font Style:</label>
+            <select id="font_style" name="font_style">
+                <option value="Arial">Arial</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Tahoma">Tahoma</option>
+            </select>
+
+            <label for="box_size">Date Box Size:</label>
+            <input type="number" id="box_size" name="box_size" min="50" max="200">
+
+            <label for="title_text">Calendar Title:</label>
+            <input type="text" id="title_text" name="title_text">
+
+            <label for="icon">Upload Icon:</label>
+            <input type="file" id="icon" name="icon" accept="image/png">
+
+            <button type="submit">Save Customizations</button>
+        </form>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const builderIcon = document.getElementById('builder-icon');
+        const sidebar = document.getElementById('sidebar');
+        const builderOverlay = document.getElementById('builder-overlay');
+        const customizationPanel = document.querySelector('.customization-panel');
+
+        // When the Calendar Builder icon is clicked
+        if (builderIcon) {
+            builderIcon.addEventListener('click', () => {
+                sidebar.classList.add('expand'); // Add class to trigger CSS animation
+                builderOverlay.classList.add('show'); // Show the overlay with transition
+                setTimeout(() => {
+                    customizationPanel.style.opacity = '1';
+                    customizationPanel.style.visibility = 'visible';
+                }, 1000); // Delay for sidebar animation
+            });
+        }
+
+        // Close overlay when clicking outside the panel
+        builderOverlay.addEventListener('click', (event) => {
+            if (event.target === builderOverlay) {
+                sidebar.classList.remove('expand');
+                builderOverlay.classList.remove('show');
+                customizationPanel.style.opacity = '0';
+                customizationPanel.style.visibility = 'hidden';
+            }
+        });
+    });
+</script>
+
+
+<!-- CSS -->
+<style>
+    /* Sidebar Styles */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 60px;
+        height: 100%;
+        background: #2c3e50;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow: hidden;
+        transition: width 1s ease; /* Smooth width transition */
+    }
+
+    .sidebar.expand {
+        width: 100%; /* Full width expansion */
+    }
+
+    /* Overlay Background */
+    .nav-fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: transparent;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 999;
+        transition: background-color 1s ease; /* Smooth background transition */
+        pointer-events: none;
+    }
+
+    .nav-fullscreen.show {
+        background-color: rgba(44, 62, 80, 1); /* Full color background */
+        pointer-events: auto;
+    }
+
+    /* Customization Panel */
+    .customization-panel {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        width: 100%;
+        opacity: 0; /* Start hidden */
+        visibility: hidden;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+</style>
+
+
+
+
+
+
+
     <main>
         <section id="my-calendar">
             <h2>
@@ -134,56 +410,52 @@
                 console.error('Grab Token button not found');
             }
 
-            if (haveTokenBtn) {
-                haveTokenBtn.addEventListener('click', function() {
-                    dimOverlay.style.display = 'block';
-                    tokenSubmenu.style.display = 'block';
-                });
-            }
-
-            tokenForm.addEventListener('submit', function(event) {
+            haveTokenBtn.addEventListener('click', function () {
+                dimOverlay.style.display = 'block';
+                tokenSubmenu.style.display = 'block';
+            });
+            
+            tokenForm.addEventListener('submit', function (event) {
                 event.preventDefault();
                 const token = document.getElementById('token-input').value;
+            
                 fetch('/verify-token', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: token })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        tokenDisplay.textContent = `Token: ${data.token}`;
-                        emailDisplay.textContent = `Email: ${data.email}`;
-                        verifyBtn.style.display = 'block';
-                        tokenResult.style.display = 'block';
-                        startPollingForApproval();
-                    } else {
-                        alert('Token or subtoken not found');
-                    }
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            tokenDisplay.textContent = `Token: ${data.token}`;
+                            emailDisplay.textContent = `Email: ${data.email}`;
+                            verifyBtn.style.display = 'block';
+                            tokenResult.style.display = 'block';
+                        } else {
+                            alert('Token not found!');
+                        }
+                    });
             });
-
-            verifyBtn.addEventListener('click', function() {
-                const email = emailDisplay.textContent.split(': ')[1];
+            
+            verifyBtn.addEventListener('click', function () {
                 const token = tokenDisplay.textContent.split(': ')[1];
+                const email = emailDisplay.textContent.split(': ')[1];
+            
                 fetch('/send-verification-email', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email: email, token: token })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: token, email: email })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Verification email sent');
-                    } else {
-                        alert('Failed to send verification email');
-                    }
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Verification email sent to the token owner!');
+                        } else {
+                            alert('Failed to send verification email.');
+                        }
+                    });
             });
+            
 
             function startPollingForApproval() {
                 const interval = setInterval(() => {
@@ -264,6 +536,46 @@
                 console.error('Ready to go button not found');
             }
         });
+
+
+
+
+
+
+
+
+
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const editIcon = document.getElementById('edit-icon');
+            const customizationPanel = document.getElementById('customization-panel');
+            
+            if (editIcon) {
+                editIcon.addEventListener('click', () => {
+                    customizationPanel.style.display = customizationPanel.style.display === 'none' ? 'block' : 'none';
+                });
+            }
+        });
+
+
+
+
+
+
+
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const builderIcon = document.getElementById('builder-icon');
+            const builderOverlay = document.getElementById('builder-overlay');
+    
+            if (builderIcon) {
+                builderIcon.addEventListener('click', () => {
+                    builderOverlay.style.display = 'flex';
+                });
+            }
+        });
     </script>
 
     <style>
@@ -329,6 +641,12 @@
                 transform: translateY(-10px);
             }
         }
+
+
+        
+
+
+            
     </style>
 </body>
 </html>

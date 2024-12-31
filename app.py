@@ -57,6 +57,7 @@ class User(UserMixin):
 
 
 
+
 # JSON data file
 DATA_FILE = "data.json"
 
@@ -107,31 +108,62 @@ def calendar():
     data = load_data()
     
     if current_user.is_authenticated:
-        user_email = current_user.email  # Assuming you have the current user's email
+        user_email = current_user.email  # Fetch current user's email
         user_signed_in = google_sheets.get_cell_value(user_email, "IsSignedIn")
         user_has_token = google_sheets.get_cell_value(user_email, "HasToken")
         token_type = google_sheets.get_cell_value(user_email, "TokenType")
         cal_title = google_sheets.get_cell_value(user_email, "CAL-Title") or "My Calendar"
         
+        # Retrieve customizations from the session or set defaults
+        customizations = session.get('calendar_customizations', {
+            "text_color": "#000000",
+            "border_color": "#0078d4",
+            "font_style": "Arial",
+            "box_size": "100",
+            "title_text": cal_title,
+            "icon": None,
+        })
+
         if request.method == "POST":
+            # Handle calendar title update
             new_title = request.form.get("calendar_title")
             if new_title:
                 google_sheets.set_cell_value(user_email, "CAL-Title", new_title)
-                cal_title = new_title
-                return render_template("calendar.html", data=data, user_signed_in=user_signed_in, user_has_token=user_has_token, token_type=token_type, cal_title=cal_title)
+                customizations["title_text"] = new_title
+                session['calendar_customizations'] = customizations
+                return render_template(
+                    "calendar.html", 
+                    data=data, 
+                    user_signed_in=user_signed_in, 
+                    user_has_token=user_has_token, 
+                    token_type=token_type, 
+                    cal_title=new_title, 
+                    customizations=customizations
+                )
 
-        print(f"user_signed_in: {user_signed_in}, user_has_token: {user_has_token}, token_type: {token_type}, cal_title: {cal_title}")  # Debug print
+        print(f"user_signed_in: {user_signed_in}, user_has_token: {user_has_token}, token_type: {token_type}, cal_title: {cal_title}, customizations: {customizations}")  # Debug
     else:
         user_signed_in = "False"
         user_has_token = "False"
         token_type = ""
         cal_title = "My Calendar"
+        customizations = {}
 
     if request.method == "POST":
+        # Handle date selection for checkout
         selected_dates = request.form.getlist("selected_dates[]")
         return redirect(url_for("checkout", dates=",".join(selected_dates)))
 
-    return render_template("calendar.html", data=data, user_signed_in=user_signed_in, user_has_token=user_has_token, token_type=token_type, cal_title=cal_title)
+    return render_template(
+        "calendar.html", 
+        data=data, 
+        user_signed_in=user_signed_in, 
+        user_has_token=user_has_token, 
+        token_type=token_type, 
+        cal_title=cal_title, 
+        customizations=customizations
+    )
+
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
@@ -247,6 +279,9 @@ def signup():
         }
         save_user_data(user_data)
         
+        google_sheets.preload_google_sheets()
+
+        
         login_user(user)  # Log in the user
         return redirect(url_for('calendar'))
     return render_template('signup.html')
@@ -282,9 +317,6 @@ def useToken():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        
-        
-        
         email = request.form['email']
         password = request.form['password']
         
@@ -293,29 +325,33 @@ def login():
         
         if username and passwordPresent == password:
             user_id = str(len(users) + 1)
-            user = User(user_id, username, email)
+            
+            # Load profile picture based on username
+            profile_picture = f"{username}.jpg"
+            
+            user = User(user_id, username, email, profile_picture=profile_picture)
             users[user_id] = user
             
             signin(email, password)
             login_user(user)  # Log in the user
             
-            # Load user data from JSON file
-            user_data = load_user_data()
-            if user_id in user_data:
-                user.profile_picture = user_data[user_id].get('profile_picture')
-            
             return redirect(url_for('calendar'))
     
     return render_template('login.html', sillyFellaAutoLogin=sillyFellaAutoLogin)
+
+
     
 
 @app.route('/profile')
+@login_required
 def profile():
-    if current_user.is_authenticated:
-        user_data = load_user_data()
-        profile_picture = user_data.get(current_user.id, {}).get('profile_picture')
-        return render_template('profile.html', profile_picture=profile_picture)
-    return redirect(url_for('login'))
+    profile_picture = current_user.profile_picture or 'default.jpg'
+    return render_template(
+        'profile.html',
+        profile_picture=url_for('static', filename=f'profile_pictures/{profile_picture}')
+    )
+
+
 
 
 @app.route('/tokenGET')
@@ -492,77 +528,87 @@ def verify_email(token):
     
 @app.route('/send-verification-email', methods=['POST'])
 def send_verification_email():
-    email = request.json.get('email')
+    """Sends a verification email to the owner of the token."""
+    owner_email = request.json.get('email')
     token = request.json.get('token')
+
     try:
-        verification_link = generate_verification_link(email, token)
+        verification_link = generate_verification_link(owner_email, token)
         email_body = f"""
-        <p>Please click the link below to verify your token:</p>
-        <a href="{verification_link}">Verify Token</a>
+        <p>You have a token redemption request:</p>
+        <p>Token: {token}</p>
+        <p>Please click the link below to confirm:</p>
+        <a href="{verification_link}">Verify Token Redemption</a>
         """
-        send_email(email, "Token Verification", email_body)
+        send_email(owner_email, "Token Redemption Request", email_body)
         return jsonify(success=True)
     except Exception as e:
         print(f"Failed to send email: {e}")
         return jsonify(success=False)
 
+
     
     
 def generate_verification_link(email, token):
-    token = s.dumps({'email': email, 'token': token}, salt='email-verify')
-    return url_for('verify_email', token=token, _external=True)
-
-
-
-
-# ...existing code...
+    """Generates a secure verification link."""
+    token_data = s.dumps({'email': email, 'token': token}, salt='email-verify')
+    return url_for('redeem_token', token=token_data, _external=True)
 
 @app.route('/verify-token', methods=['POST'])
 def verify_token():
+    """Verifies if a token exists and starts the redemption process."""
     token = request.json.get('token')
-    google_sheets.preload_google_sheets()  # Re-preload the database
+    google_sheets.preload_google_sheets()
+    
     for email, data in google_sheets.cache.items():
         if token == data.get('Token') or token in data.get('Xtra', '').split(','):
             session['redeemer_email'] = current_user.email
             session['owner_email'] = email
-            session['verified_token'] = token  # Ensure this line is present
-            app.logger.debug(f"Session set: Redeemer Email: {session['redeemer_email']}, Owner Email: {session['owner_email']}, Token: {session['verified_token']}")
+            session['verified_token'] = token
+            
             return jsonify(success=True, token=token, email=email)
     return jsonify(success=False)
 
 @app.route('/redeem-token', methods=['GET', 'POST'])
 @login_required
 def redeem_token():
+    """Handles the redemption process after the owner approves."""
     if request.method == 'POST':
         redeemer_email = session.get('redeemer_email')
         token = session.get('verified_token')
-        email = current_user.email
-        app.logger.debug(f"Redeem Token POST: Redeemer Email: {redeemer_email}, Token: {token}, Current User Email: {email}")
-        if email and token:
+        owner_email = session.get('owner_email')
+
+        if redeemer_email and token and owner_email:
+            # Update the redeemer's Google Sheets data
+            google_sheets.set_cell_value(redeemer_email, "Token", token)
             google_sheets.set_cell_value(redeemer_email, "HasToken", "TRUE")
+            
+            # Remove the token from the owner's "Xtra" list
+            xtra_tokens = google_sheets.get_cell_value(owner_email, "Xtra").split(',')
+            xtra_tokens.remove(token)
+            google_sheets.set_cell_value(owner_email, "Xtra", ','.join(xtra_tokens))
+
+            # Refresh Google Sheets data
             google_sheets.preload_google_sheets()
-            return redirect(url_for('calendar'))
-        else:
-            return "Verification failed", 400
+
+            # Notify the redeemer of the successful process
+            session['redemption_approved'] = True
+            return jsonify(success=True)
+        return jsonify(success=False)
     else:
         redeemer_email = session.get('redeemer_email')
-        app.logger.debug(f"Redeem Token GET: Redeemer Email: {redeemer_email}")
-    return render_template('redeem_token.html', redeemer_email=redeemer_email)
+        return render_template('redeem_token.html', redeemer_email=redeemer_email)
+    
 
 @app.route('/check-approval-status', methods=['POST'])
 def check_approval_status():
+    """Polls for the approval status of the token redemption."""
     token = request.json.get('token')
-    for email, data in google_sheets.cache.items():
-        if token == data.get('Token') or token in data.get('Xtra', '').split(','):
-            if session.get('verified_email') == email and session.get('verified_token') == token:
-                google_sheets.set_cell_value(current_user.email, "Token", token)
-                google_sheets.set_cell_value(current_user.email, "HasToken", "TRUE")
-                google_sheets.preload_google_sheets()  # Re-preload the database
-                return jsonify(approved=True)
+    if token and session.get('redemption_approved'):
+        return jsonify(approved=True)
     return jsonify(approved=False)
 
 
-# ...existing code...
 
 @app.route('/confirm-redemption', methods=['GET', 'POST'])
 @login_required
@@ -604,15 +650,41 @@ def upload_profile_picture():
         return redirect(url_for('profile'))
 
     if file and allowed_file(file.filename):
-        filename = secure_filename(f"{current_user.email}.jpg")
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        # Save the file with the username as the filename
+        filename = secure_filename(f"{current_user.username}.jpg")
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
         
-        # Save the profile picture filename in the JSON file
-        user_data = load_user_data()
-        user_data[current_user.email]['profile_picture'] = filename
-        save_user_data(user_data)
-        
+        # Update the current_user's profile picture
         current_user.profile_picture = filename
+
+        # Update the users dictionary (if necessary for persistence)
+        user = users.get(current_user.id)
+        if user:
+            user.profile_picture = filename
+
         return redirect(url_for('profile'))
 
     return redirect(url_for('profile'))
+
+
+# Calendar Builder Route
+@app.route("/customize-calendar", methods=["GET", "POST"])
+@login_required
+def customize_calendar():
+    if current_user.is_authenticated and current_user.token_type == "DOM":
+        if request.method == "POST":
+            # Save customization settings here
+            customizations = {
+                "text_color": request.form.get("text_color"),
+                "border_color": request.form.get("border_color"),
+                "font_style": request.form.get("font_style"),
+                "box_size": request.form.get("box_size"),
+                "title_text": request.form.get("title_text"),
+                "icon": request.files.get("icon")
+            }
+            # Save logic here (e.g., database or session storage)
+            session['calendar_customizations'] = customizations
+            return redirect(url_for("calendar"))
+        return render_template("customize_calendar.html")
+    return redirect(url_for("calendar"))

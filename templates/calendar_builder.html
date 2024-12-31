@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Calendar Builder</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .nav-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .customization-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            color: black;
+        }
+
+        .customization-panel label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .customization-panel input, .customization-panel select, .customization-panel button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .customization-panel button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-fullscreen">
+        <div class="customization-panel">
+            <form method="POST" enctype="multipart/form-data">
+                <label for="text_color">Text Color:</label>
+                <input type="color" id="text_color" name="text_color">
+
+                <label for="border_color">Border Color:</label>
+                <input type="color" id="border_color" name="border_color">
+
+                <label for="font_style">Font Style:</label>
+                <select id="font_style" name="font_style">
+                    <option value="Arial">Arial</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Tahoma">Tahoma</option>
+                </select>
+
+                <label for="box_size">Date Box Size:</label>
+                <input type="number" id="box_size" name="box_size" min="50" max="200">
+
+                <label for="title_text">Calendar Title:</label>
+                <input type="text" id="title_text" name="title_text">
+
+                <label for="icon">Upload Icon:</label>
+                <input type="file" id="icon" name="icon" accept="image/png">
+
+                <button type="submit">Save Customizations</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+

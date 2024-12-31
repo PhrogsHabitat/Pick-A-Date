@@ -68,6 +68,9 @@ body {
 #ho.icon{
     filter: brightness(5) grayscale(100%); /* Ensures all icons appear white */
 }
+#builder-icon.icon{
+    filter: brightness(5) grayscale(100%); /* Ensures all icons appear white */
+}
 
 .nav-item:hover .icon {
     transform: scale(1.2); /* Smooth scaling for hover */
@@ -498,3 +501,13 @@ form input:focus {
         transform: translateY(-100px);
     }
 }
+
+    
+.profile-info img {
+    width: 150px; /* Adjust size as needed */
+    height: 150px; /* Keep dimensions equal for a perfect circle */
+    border-radius: 50%; /* Make the image circular */
+    border: 5px solid rgb(146, 207, 228); /* Add light blue border */
+    object-fit: cover; /* Ensure the image fits well inside the circle */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
+    }

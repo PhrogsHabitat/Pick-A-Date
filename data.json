@@ -1,3 +1,13 @@
 {
-    "total_raised": 1038
+    "total_raised": 1038,
+    "1": {
+        "username": "InfinitelyDumb",
+        "email": "InfinitelyDumb@hotmail.com",
+        "profile_picture": null
+    },
+    "2": {
+        "username": "InfinitelyDumb",
+        "email": "infinitelydumb@hotmail.com",
+        "profile_picture": null
+    }
 }

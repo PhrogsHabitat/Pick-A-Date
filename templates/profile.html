@@ -5,8 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile - C.R.A.S.H. Robotics</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        html{
+
+            overflow-x: hidden;
+            overflow-y: hidden;
+
+        }
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f8fa;
+            color: #333;
+        }
+
+        
+
+        /* Main Content */
+        .main-content {
+            margin-left: 80px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Profile Card */
+        .profile-card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .profile-card img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 6px solid #0078d4;
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+
+        .profile-card h1 {
+            font-size: 1.5rem;
+            color: #0078d4;
+            margin-bottom: 10px;
+        }
+
+        .profile-card span {
+            font-size: 1rem;
+            color: #666;
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .profile-card form {
+            margin-top: 20px;
+        }
+
+        .profile-card input[type="file"] {
+            margin-bottom: 15px;
+        }
+
+        .profile-card button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .profile-card button:hover {
+            background-color: #005bb5;
+        }
+
+        .logout button {
+            background-color: #e81123;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .logout button:hover {
+            background-color: #c50f1f;
+        }
+
+    </style>
 </head>
 <body>
+
+    <header>
+        <h1>This is you!</h1>
+    </header>
     <!-- Navigation Bar -->
     <div class="sidebar">
         <div class="nav-item" title="Home">
@@ -23,27 +128,24 @@
         </div>
     </div>
 
-    <div class="top-bar" style="background-color: blue; color: white; padding: 10px; text-align: center;">
-        <h2>This is you!</h2>
-    </div>
-
-    <main>
-        <header>
-            <h1>Your Profile</h1>
-        </header>
-        <div class="profile-info">
-            <img src="{{ url_for('static', filename='profile_pictures/' + current_user.email + '.jpg') }}" alt="Profile Picture">
-            <span>{{ current_user.username }}</span>
-        </div>
-        <form action="{{ url_for('upload_profile_picture') }}" method="post" enctype="multipart/form-data">
-            <input type="file" name="profile_picture" accept="image/*">
-            <button type="submit">Upload</button>
-        </form>
-        <div class="logout">
-            <form action="{{ url_for('logout') }}" method="post">
-                <button type="submit">Logout</button>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="profile-card">
+            <img src="{{ url_for('static', filename='profile_pictures/' + (current_user.profile_picture if current_user.profile_picture else 'default.jpg')) }}" alt="Profile Picture">
+            <h1>{{ current_user.username }}</h1>
+            <span>{{ current_user.email }}</span>
+            
+            <form action="{{ url_for('upload_profile_picture') }}" method="post" enctype="multipart/form-data">
+                <input type="file" name="profile_picture" accept="image/*">
+                <button type="submit">Upload New Picture</button>
             </form>
+            
+            <div class="logout">
+                <form action="{{ url_for('logout') }}" method="post">
+                    <button type="submit">Logout</button>
+                </form>
+            </div>
         </div>
-    </main>
+    </div>
 </body>
 </html>
