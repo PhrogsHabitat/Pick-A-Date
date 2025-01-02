@@ -415,46 +415,47 @@
                 tokenSubmenu.style.display = 'block';
             });
             
-            tokenForm.addEventListener('submit', function (event) {
+            tokenForm.addEventListener('submit', function(event) {
                 event.preventDefault();
                 const token = document.getElementById('token-input').value;
-            
+    
                 fetch('/verify-token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: token })
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            tokenDisplay.textContent = `Token: ${data.token}`;
-                            emailDisplay.textContent = `Email: ${data.email}`;
-                            verifyBtn.style.display = 'block';
-                            tokenResult.style.display = 'block';
-                        } else {
-                            alert('Token not found!');
-                        }
-                    });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        tokenDisplay.textContent = `Token: ${data.token}`;
+                        emailDisplay.textContent = `Email: ${data.email}`;
+                        verifyBtn.style.display = 'block';
+                        tokenResult.style.display = 'block';
+                    } else {
+                        alert('Token not found!');
+                    }
+                });
             });
-            
-            verifyBtn.addEventListener('click', function () {
+    
+            verifyBtn.addEventListener('click', function() {
                 const token = tokenDisplay.textContent.split(': ')[1];
                 const email = emailDisplay.textContent.split(': ')[1];
-            
+    
                 fetch('/send-verification-email', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: token, email: email })
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('Verification email sent to the token owner!');
-                        } else {
-                            alert('Failed to send verification email.');
-                        }
-                    });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Verification email sent to the token owner!');
+                    } else {
+                        alert('Failed to send verification email.');
+                    }
+                });
             });
+        });
             
 
             function startPollingForApproval() {

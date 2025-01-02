@@ -73,7 +73,7 @@ def get_cell_value(email, column_name):
     global cache
     if email not in cache:
         preload_google_sheets()
-    return cache[email].get(column_name, "")
+    return cache[email.lower()].get(column_name, "")
 
 # Set cell value and refresh cache
 def set_cell_value(email, column_name, value):

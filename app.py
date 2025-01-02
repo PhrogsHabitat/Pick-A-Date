@@ -262,7 +262,7 @@ def save_user_data(data):
 def signup():
     if request.method == 'POST':
         username = request.form['username']
-        email = request.form['email']
+        email = request.form['email'].lower()
         password = request.form['password']
         user_id = str(len(users) + 1)
         user = User(user_id, username, email)
@@ -546,7 +546,6 @@ def send_verification_email():
         print(f"Failed to send email: {e}")
         return jsonify(success=False)
 
-
     
     
 def generate_verification_link(email, token):
@@ -559,13 +558,13 @@ def verify_token():
     """Verifies if a token exists and starts the redemption process."""
     token = request.json.get('token')
     google_sheets.preload_google_sheets()
-    
+
     for email, data in google_sheets.cache.items():
         if token == data.get('Token') or token in data.get('Xtra', '').split(','):
             session['redeemer_email'] = current_user.email
             session['owner_email'] = email
             session['verified_token'] = token
-            
+
             return jsonify(success=True, token=token, email=email)
     return jsonify(success=False)
 
