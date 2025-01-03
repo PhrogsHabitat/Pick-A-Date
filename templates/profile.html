@@ -105,6 +105,78 @@
             background-color: #c50f1f;
         }
 
+        .gift-token-form {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .gift-token-form input,
+        .gift-token-form button {
+            margin-bottom: 10px;
+        }
+
+        .gift-token-form button {
+            background-color: #28a745;
+        }
+
+        .gift-token-form button:hover {
+            background-color: #218838;
+        }
+
+        .popup-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #0078d4;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            text-align: center;
+            animation: slideDown 0.5s forwards;
+        }
+
+        .popup-message.error {
+            background-color: #e81123;
+        }
+
+        .popup-message .progress-bar {
+            height: 5px;
+            background-color: #fff;
+            width: 100%;
+            animation: progressBar 5s linear forwards;
+        }
+
+        @keyframes slideDown {
+            from {
+                top: -50px;
+            }
+            to {
+                top: 0;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                top: 0;
+            }
+            to {
+                top: -50px;
+            }
+        }
+
+        @keyframes progressBar {
+            from {
+                width: 100%;
+            }
+            to {
+                width: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -140,6 +212,15 @@
                 <button type="submit">Upload New Picture</button>
             </form>
             
+            <button onclick="toggleGiftTokenForm()">Gift a Token</button>
+            <div class="gift-token-form" id="giftTokenForm">
+                <form action="{{ url_for('gift_token') }}" method="post">
+                    <input type="text" name="token" placeholder="Token to gift" required>
+                    <input type="email" name="email" placeholder="Recipient's email" required>
+                    <button type="submit">Let's go!</button>
+                </form>
+            </div>
+            
             <div class="logout">
                 <form action="{{ url_for('logout') }}" method="post">
                     <button type="submit">Logout</button>
@@ -147,5 +228,57 @@
             </div>
         </div>
     </div>
+    <div class="popup-message" id="popupMessage">
+        <span id="popupMessageText"></span>
+        <div class="progress-bar"></div>
+    </div>
+    <script>
+        function toggleGiftTokenForm() {
+            var form = document.getElementById('giftTokenForm');
+            if (form.style.display === 'none' || form.style.display === '') {
+                form.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+            }
+        }
+
+        function showPopupMessage(message, isError = false) {
+            var popup = document.getElementById('popupMessage');
+            var popupText = document.getElementById('popupMessageText');
+            popupText.textContent = message;
+            if (isError) {
+                popup.classList.add('error');
+            } else {
+                popup.classList.remove('error');
+            }
+            popup.style.display = 'block';
+            popup.classList.remove('slideUp');
+            popup.classList.add('slideDown');
+
+            setTimeout(function() {
+                popup.classList.remove('slideDown');
+                popup.classList.add('slideUp');
+                setTimeout(function() {
+                    popup.style.display = 'none';
+                }, 500);
+            }, 5000);
+        }
+
+        document.querySelector('.gift-token-form form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var formData = new FormData(this);
+            fetch('{{ url_for("gift_token") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                showPopupMessage(data.includes('Hey') ? data : `Tell ${data} to refresh their page!`, data.includes('Hey'));
+            })
+            .catch(error => {
+                showPopupMessage('An error occurred. Please try again.', true);
+            });
+        });
+    </script>
 </body>
 </html>

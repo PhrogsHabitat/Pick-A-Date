@@ -114,15 +114,15 @@ def calendar():
         token_type = google_sheets.get_cell_value(user_email, "TokenType")
         cal_title = google_sheets.get_cell_value(user_email, "CAL-Title") or "My Calendar"
         
-        # Retrieve customizations from the session or set defaults
-        customizations = session.get('calendar_customizations', {
-            "text_color": "#000000",
-            "border_color": "#0078d4",
-            "font_style": "Arial",
-            "box_size": "100",
+        # Retrieve customizations from Google Sheets or set defaults
+        customizations = {
+            "text_color": google_sheets.get_cell_value(user_email, "CAL-TextColor") or "#000000",
+            "border_color": google_sheets.get_cell_value(user_email, "CAL-BorderColor") or "#0078d4",
+            "font_style": google_sheets.get_cell_value(user_email, "CAL-FontStyle") or "Arial",
+            "box_size": google_sheets.get_cell_value(user_email, "CAL-BoxSize") or "100",
             "title_text": cal_title,
-            "icon": None,
-        })
+            "icon": google_sheets.get_cell_value(user_email, "CAL-Icon")
+        }
 
         if request.method == "POST":
             # Handle calendar title update
@@ -130,7 +130,6 @@ def calendar():
             if new_title:
                 google_sheets.set_cell_value(user_email, "CAL-Title", new_title)
                 customizations["title_text"] = new_title
-                session['calendar_customizations'] = customizations
                 return render_template(
                     "calendar.html", 
                     data=data, 
@@ -671,19 +670,86 @@ def upload_profile_picture():
 @app.route("/customize-calendar", methods=["GET", "POST"])
 @login_required
 def customize_calendar():
-    if current_user.is_authenticated and current_user.token_type == "DOM":
+    if current_user.is_authenticated and get_cell_value(current_user.email, "TokenType") == "DOM":
         if request.method == "POST":
-            # Save customization settings here
             customizations = {
+                "title_banner_color": request.form.get("title_banner_color"),
+                "title_color": request.form.get("title_color"),
+                "separator_color": request.form.get("separator_color"),
                 "text_color": request.form.get("text_color"),
-                "border_color": request.form.get("border_color"),
-                "font_style": request.form.get("font_style"),
-                "box_size": request.form.get("box_size"),
                 "title_text": request.form.get("title_text"),
-                "icon": request.files.get("icon")
+                "banner_title_text": request.form.get("banner_title_text"),
+                "bio_text": request.form.get("bio_text"),
+                "calendar_border_color": request.form.get("calendar_border_color"),
+                "background_spacing": request.form.get("background_spacing"),
+                "background_blur": request.form.get("background_blur"),
+                "background_size": request.form.get("background_size"),
+                "icon": None,
+                "background_image": None
             }
-            # Save logic here (e.g., database or session storage)
-            session['calendar_customizations'] = customizations
+            icon = request.files.get("icon")
+            if icon and allowed_file(icon.filename):
+                filename = secure_filename(icon.filename)
+                icon.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                customizations["icon"] = filename
+
+            background_image = request.files.get("background_image")
+            if background_image and allowed_file(background_image.filename):
+                filename = secure_filename(background_image.filename)
+                background_image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                customizations["background_image"] = filename
+
+            # Save customizations to Google Sheets
+            user_email = current_user.email
+            google_sheets.set_cell_value(user_email, "CAL-TitleBannerColor", customizations["title_banner_color"])
+            google_sheets.set_cell_value(user_email, "CAL-TitleColor", customizations["title_color"])
+            google_sheets.set_cell_value(user_email, "CAL-SeparatorColor", customizations["separator_color"])
+            google_sheets.set_cell_value(user_email, "CAL-TextColor", customizations["text_color"])
+            google_sheets.set_cell_value(user_email, "CAL-TitleText", customizations["title_text"])
+            google_sheets.set_cell_value(user_email, "CAL-BannerTitleText", customizations["banner_title_text"])
+            google_sheets.set_cell_value(user_email, "CAL-BioText", customizations["bio_text"])
+            google_sheets.set_cell_value(user_email, "CAL-CalendarBorderColor", customizations["calendar_border_color"])
+            google_sheets.set_cell_value(user_email, "CAL-BackgroundSpacing", customizations["background_spacing"])
+            google_sheets.set_cell_value(user_email, "CAL-BackgroundBlur", customizations["background_blur"])
+            google_sheets.set_cell_value(user_email, "CAL-BackgroundSize", customizations["background_size"])
+            if customizations["icon"]:
+                google_sheets.set_cell_value(user_email, "CAL-Icon", customizations["icon"])
+            if customizations["background_image"]:
+                google_sheets.set_cell_value(user_email, "CAL-BackgroundImage", customizations["background_image"])
+
             return redirect(url_for("calendar"))
-        return render_template("customize_calendar.html")
+        return render_template("calendar_builder.html")
     return redirect(url_for("calendar"))
+
+@app.route('/gift_token', methods=['POST'])
+@login_required
+def gift_token():
+    token = request.form['token']
+    recipient_email = request.form['email'].lower()
+
+    # Check if the token exists in the current user's Xtras
+    xtra_tokens = google_sheets.get_cell_value(current_user.email, "Xtra").split(',')
+    if token not in xtra_tokens:
+        return "Hey, this token doesn't exist!", 400
+
+    # Update the recipient's Token cell
+    google_sheets.set_cell_value(recipient_email, "Token", token)
+    google_sheets.set_cell_value(recipient_email, "HasToken", "TRUE")
+
+    # Set the TokenType based on the token prefix
+    if token.startswith("DOM-"):
+        google_sheets.set_cell_value(recipient_email, "TokenType", "DOM")
+    elif token.startswith("SUB-"):
+        google_sheets.set_cell_value(recipient_email, "TokenType", "SUB")
+
+    # Remove the token from the current user's Xtras
+    xtra_tokens.remove(token)
+    google_sheets.set_cell_value(current_user.email, "Xtra", ','.join(xtra_tokens))
+
+    # Re-preload the Google Sheets data
+    google_sheets.preload_google_sheets()
+
+    # Get the recipient's username
+    recipient_username = google_sheets.get_cell_value(recipient_email, "Username")
+
+    return recipient_username

@@ -7,139 +7,21 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
     <style>
-        #customization-panel {
-            display: none;
-            margin: 20px auto;
-            max-width: 500px;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, opacity 0.3s ease;
+        #calendar {
+            color: {{ customizations.text_color }};
+            border: 2px solid {{ customizations.border_color }};
+            font-family: {{ customizations.font_style }};
         }
 
-        #customization-panel.open {
-            display: block;
-            transform: translateY(0);
-            opacity: 1;
+        .date-box {
+            width: {{ customizations.box_size }}px;
+            height: {{ customizations.box_size }}px;
         }
 
-        #customization-panel label {
-            font-weight: bold;
-            color: #0078d4;
-            margin-top: 10px;
-            display: block;
+        #calendar-title {
+            color: {{ customizations.text_color }};
         }
-
-        #customization-panel input[type="color"],
-        #customization-panel input[type="file"] {
-            width: 100%;
-            margin: 10px 0;
-            padding: 5px;
-            font-size: 1rem;
-        }
-
-        #customization-panel button {
-            width: 100%;
-            padding: 10px;
-            background: #0078d4;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.3s ease, transform 0.3s ease;
-        }
-
-        #customization-panel button:hover {
-            background-color: #005ea6;
-            transform: scale(1.05);
-        }
-
-        #calendar-preview {
-            padding: 20px;
-            border: 2px solid #0078d4;
-            border-radius: 10px;
-            text-align: center;
-            margin-top: 20px;
-            background-color: #eaf2f8;
-            transition: border-color 0.3s ease, color 0.3s ease;
-        }
-
-        #calendar-preview img {
-            max-height: 50px;
-            margin-bottom: 10px;
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /* Sidebar Styles */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 60px;
-        height: 100%;
-        background: #2c3e50;
-        z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        overflow: hidden;
-        transition: width 1s ease; /* Smooth width transition */
-    }
-
-    .sidebar.expand {
-        width: 100%; /* Full width expansion */
-    }
-
-    /* Overlay Background */
-    .nav-fullscreen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: transparent;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 999;
-        transition: background-color 1s ease; /* Smooth background transition */
-        pointer-events: none;
-    }
-
-    .nav-fullscreen.show {
-        background-color: rgba(44, 62, 80, 1); /* Full color background */
-        pointer-events: auto;
-    }
-
-    /* Customization Panel */
-    .customization-panel {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        max-width: 500px;
-        width: 100%;
-        opacity: 0; /* Start hidden */
-        visibility: hidden;
-        transition: opacity 0.5s ease, visibility 0.5s ease;
-    }
-</style>
-
+    </style>
 </head>
 <body>
     <div class="sidebar">
@@ -156,187 +38,29 @@
             </a>
         </div>
         {% if token_type == "DOM" %}
-    <div class="nav-item" title="Calendar Builder" id="builder-icon">
-        <span class="icon">⚙️</span>
-        <span class="label">Calendar Builder</span>
-    </div>
-    {% endif %}
+        <div class="nav-item" title="Calendar Builder" id="builder-icon">
+            <a href="{{ url_for('customize_calendar') }}"></a>
+            <span class="icon" id="calbld">⚙️</span>
+            <span class="label">Calendar Builder</span>
+        </div>
+        {% endif %}
     </div>
 
     <header>
-        <h1>My Calendar</h1>
+        <h1 id="calendar-title">{{ customizations.title_text }}
+            {% if customizations.icon %}
+            <img src="{{ url_for('static', filename='profile_pictures/' + customizations.icon) }}" alt="Icon" style="height: 50px; vertical-align: middle;">
+            {% endif %}
+        </h1>
         <p>Total Raised: ${{ data['total_raised'] }}</p>
     </header>
 
-
-
-
-
-
-
-
-
-<!-- Fullscreen Customization Overlay -->
-<div id="builder-overlay" class="nav-fullscreen">
-    <div class="customization-panel">
-        <form method="POST" enctype="multipart/form-data" action="{{ url_for('customize_calendar') }}">
-            <label for="text_color">Text Color:</label>
-            <input type="color" id="text_color" name="text_color">
-
-            <label for="border_color">Border Color:</label>
-            <input type="color" id="border_color" name="border_color">
-
-            <label for="font_style">Font Style:</label>
-            <select id="font_style" name="font_style">
-                <option value="Arial">Arial</option>
-                <option value="Verdana">Verdana</option>
-                <option value="Tahoma">Tahoma</option>
-            </select>
-
-            <label for="box_size">Date Box Size:</label>
-            <input type="number" id="box_size" name="box_size" min="50" max="200">
-
-            <label for="title_text">Calendar Title:</label>
-            <input type="text" id="title_text" name="title_text">
-
-            <label for="icon">Upload Icon:</label>
-            <input type="file" id="icon" name="icon" accept="image/png">
-
-            <button type="submit">Save Customizations</button>
-        </form>
-    </div>
-</div>
-
-<!-- JavaScript -->
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const builderIcon = document.getElementById('builder-icon');
-        const sidebar = document.getElementById('sidebar');
-        const builderOverlay = document.getElementById('builder-overlay');
-        const customizationPanel = document.querySelector('.customization-panel');
-
-        // When the Calendar Builder icon is clicked
-        if (builderIcon) {
-            builderIcon.addEventListener('click', () => {
-                sidebar.classList.add('expand'); // Add class to trigger CSS animation
-                builderOverlay.classList.add('show'); // Show the overlay with transition
-                setTimeout(() => {
-                    customizationPanel.style.opacity = '1';
-                    customizationPanel.style.visibility = 'visible';
-                }, 1000); // Delay for sidebar animation
-            });
-        }
-
-        // Close overlay when clicking outside the panel
-        builderOverlay.addEventListener('click', (event) => {
-            if (event.target === builderOverlay) {
-                sidebar.classList.remove('expand');
-                builderOverlay.classList.remove('show');
-                customizationPanel.style.opacity = '0';
-                customizationPanel.style.visibility = 'hidden';
-            }
-        });
-    });
-</script>
-
-
-<!-- CSS -->
-<style>
-    /* Sidebar Styles */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 60px;
-        height: 100%;
-        background: #2c3e50;
-        z-index: 1000;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        overflow: hidden;
-        transition: width 1s ease; /* Smooth width transition */
-    }
-
-    .sidebar.expand {
-        width: 100%; /* Full width expansion */
-    }
-
-    /* Overlay Background */
-    .nav-fullscreen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: transparent;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 999;
-        transition: background-color 1s ease; /* Smooth background transition */
-        pointer-events: none;
-    }
-
-    .nav-fullscreen.show {
-        background-color: rgba(44, 62, 80, 1); /* Full color background */
-        pointer-events: auto;
-    }
-
-    /* Customization Panel */
-    .customization-panel {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        max-width: 500px;
-        width: 100%;
-        opacity: 0; /* Start hidden */
-        visibility: hidden;
-        transition: opacity 0.5s ease, visibility 0.5s ease;
-    }
-</style>
-
-
-
-
-
-
-
     <main>
         <section id="my-calendar">
-            <h2>
-                <span id="calendar-title">{{ cal_title }}</span>
-                {% if user_signed_in == "TRUE" and token_type == "DOM" %}
-                    <span id="edit-icon" style="cursor: pointer;">✏️</span>
-                {% endif %}
-            </h2>
-            <form id="title-form" method="POST" style="display: none;">
-                <input type="text" name="calendar_title" id="calendar-title-input" value="{{ cal_title }}">
-                <button type="submit">Save</button>
-            </form>
-            {% if user_signed_in == "TRUE" %}
-                {% if user_has_token == "TRUE" %}
-                    <p>Your Token: {{ user_has_token }}</p>
-                    <div id="calendar"></div>
-                {% else %}
-                    <div id="calendar" style="filter: blur(2px);"></div>
-                    <div class="button-container">
-                        <div class="dropdown">
-                            <button id="grab-token-btn">Grab a Token!</button>
-                        </div>
-                        <div class="dropdown">
-                            <button id="have-token-btn">Have a token?</button>
-                        </div>
-                    </div>
-                {% endif %}
-            {% else %}
-                <div id="calendar" style="filter: blur(2px);"></div>
-                <div class="button-container">
-                    <button onclick="location.href='{{ url_for('signup') }}'">Sign Up</button>
-                    <button onclick="location.href='{{ url_for('login') }}'">Log In</button>
-                </div>
-            {% endif %}
+            <h2>My Calendar</h2>
+            <p>Select a date below to support C.R.A.S.H. Robotics.</p>
+            <div id="calendar"></div>
+            <button id="cross-off" style="display: none;">Cross Off!</button>
         </section>
         <section>
             <h2>How It Works</h2>
@@ -344,6 +68,7 @@
             <ol>
                 <li>Select one or more dates from the calendar. Each date you pick helps us raise money.</li>
             </ol>
+            <p>This is a fun and interactive way to support us and see how much progress we make together!</p>
         </section>
     </main>
 
@@ -538,16 +263,6 @@
             }
         });
 
-
-
-
-
-
-
-
-
-
-
         document.addEventListener('DOMContentLoaded', function() {
             const editIcon = document.getElementById('edit-icon');
             const customizationPanel = document.getElementById('customization-panel');
@@ -558,14 +273,6 @@
                 });
             }
         });
-
-
-
-
-
-
-
-
 
         document.addEventListener('DOMContentLoaded', () => {
             const builderIcon = document.getElementById('builder-icon');
@@ -642,12 +349,6 @@
                 transform: translateY(-10px);
             }
         }
-
-
-        
-
-
-            
     </style>
 </body>
 </html>
