@@ -334,6 +334,8 @@ def login():
             signin(email, password)
             login_user(user)  # Log in the user
             
+            session['user_email'] = email
+            
             return redirect(url_for('calendar'))
     
     return render_template('login.html', sillyFellaAutoLogin=sillyFellaAutoLogin)
@@ -753,3 +755,90 @@ def gift_token():
     recipient_username = google_sheets.get_cell_value(recipient_email, "Username")
 
     return recipient_username
+
+
+
+
+import logging
+
+@app.route('/create-date-checkout-session', methods=['POST'])
+def create_date_checkout_session():
+    data = request.json
+    dates = data.get('dates', '').split(',')
+    total_cost = sum(int(date.split('-')[2]) for date in dates)
+
+    try:
+        user_email = current_user.email  # Assuming you pass the user's email as a query parameter
+        if not user_email:
+            raise ValueError("User email is required")
+
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': 'Date Donation',
+                    },
+                    'unit_amount': total_cost * 100,  # Amount in cents
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url=YOUR_DOMAIN + '/payment-success?dates=' + ','.join(dates) + '&email=' + user_email,
+            cancel_url=YOUR_DOMAIN + '/cancel.html',
+        )
+        return jsonify(url=checkout_session.url)
+    except Exception as e:
+        logging.error(f"Error creating checkout session: {e}")
+        return jsonify(error=str(e)), 500
+    
+@app.route('/get-consumed-dates', methods=['GET'])
+def get_consumed_dates():
+    user_email = current_user.email  # Assuming you pass the user's email as a query parameter
+    consumed_dates = google_sheets.get_cell_value(user_email, "ConsumedDates")
+    return consumed_dates
+
+import json
+
+@app.route('/payment-success')
+def payment_success():
+    dates = request.args.get('dates', '').split(',')  # Extract selected dates
+    user_email = current_user.email  # Retrieve the current user's email
+
+    # Fetch current consumed dates from Google Sheets
+    current_consumed_dates = google_sheets.get_cell_value(user_email, "ConsumedDates")
+
+    # Initialize or parse existing consumed dates with zero-padded keys
+    if not current_consumed_dates:
+        consumed_dates = {f"{i:02d}": False for i in range(1, 32)}  # Zero-padded keys
+    else:
+        consumed_dates = json.loads(current_consumed_dates)
+        # Normalize all keys to zero-padded format
+        consumed_dates = {f"{int(k):02d}": v for k, v in consumed_dates.items()}
+
+    # Mark selected dates as consumed, ensuring zero-padded day format
+    for date in dates:
+        day = f"{int(date.split('-')[2]):02d}"  # Normalize to zero-padded day
+        consumed_dates[day] = True
+
+    # Convert back to JSON and update the Google Sheets cell
+    new_consumed_dates = json.dumps(consumed_dates, indent=4)
+    google_sheets.set_cell_value(user_email, "ConsumedDates", new_consumed_dates)
+
+    # Reload the Google Sheets cache
+    google_sheets.preload_google_sheets()
+
+    return redirect(url_for('calendar'))
+
+@app.route('/customize_calendar')
+@login_required
+def customize_calendar():
+    customizations = {
+        'text_color': '#000000',
+        'border_color': '#cccccc',
+        'font_style': 'Arial',
+        'title_text': 'My Calendar',
+        'icon': None
+    }
+    return render_template("calendar_builder.html", customizations=customizations)

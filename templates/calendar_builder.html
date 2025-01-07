@@ -3,197 +3,325 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendar Builder</title>
+    <title>Advanced Calendar Editor</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         body {
             margin: 0;
-            display: flex;
-            overflow: hidden;
-        }
-        .calendar-preview {
-            flex: 1;
-            padding: 20px;
-            background: #f0f0f0;
-            overflow: auto;
-            position: relative;
-        }
-        .calendar-preview #calendar {
-            border: 2px solid;
-            padding: 20px;
-            background: white;
-        }
-        .calendar-preview .date-box {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            margin: 5px;
-            border: 1px solid;
-            text-align: center;
-            line-height: 50px;
-        }
-        .quick-access-bar {
-            width: 300px;
-            background: white;
-            padding: 20px;
-            box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+            font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
+            height: 100vh;
         }
-        .quick-access-bar .zoom-buttons {
+
+        /* Toolbar */
+        .toolbar {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
+            align-items: center;
+            background: #333;
+            color: white;
+            padding: 10px;
         }
-        .quick-access-bar .parameters {
+
+        .toolbar button {
+            background: none;
+            border: none;
+            color: white;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+
+        .toolbar button:hover {
+            color: #0078d4;
+        }
+
+        /* Main Editor Layout */
+        .editor-container {
+            display: flex;
             flex: 1;
+            overflow: hidden;
+        }
+
+        .calendar-canvas {
+            flex: 3;
+            background: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             overflow: auto;
         }
-        .quick-access-bar .parameters label {
-            display: block;
-            margin-top: 10px;
-        }
-        .quick-access-bar .parameters input,
-        .quick-access-bar .parameters select,
-        .quick-access-bar .parameters textarea {
-            width: 100%;
-            margin-top: 5px;
+
+        .calendar-container {
+            background: white;
+            border: 2px solid #ccc;
+            width: 80%;
             padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #calendar-title {
+            font-size: 24px;
+            margin: 10px 0;
+        }
+
+        #calendar-subtitle {
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .day-labels {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .dates-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            width: 100%;
+        }
+
+        .date-cell {
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .date-cell:hover {
+            background: #f0f0f0;
+        }
+
+        /* Customization Panel */
+        .customization-panel {
+            flex: 1;
+            background: white;
+            border-left: 1px solid #ccc;
+            padding: 20px;
+        }
+
+        .customization-panel h3 {
+            margin-top: 0;
+        }
+
+        .customization-panel label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        .customization-panel input,
+        .customization-panel select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="calendar-preview">
-        <header id="calendar-header" style="background-color: #0078d4;">
-            <h1 id="calendar-title" style="color: #ffffff;">My Calendar</h1>
-        </header>
-        <main>
-            <section id="my-calendar">
-                <h2 id="banner-title">My Calendar</h2>
-                <p id="bio-text">Select a date below to support C.R.A.S.H. Robotics.</p>
-                <div id="calendar">
-                    <!-- Generate 31 date boxes -->
-                    {% for i in range(1, 32) %}
-                    <div class="date-box">{{ i }}</div>
-                    {% endfor %}
-                </div>
-            </section>
-        </main>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button id="save-btn">💾 Save</button>
+        <button id="reset-btn">🔄 Reset</button>
+        <button id="import-btn">📂 Import</button>
+        <button id="export-btn">📤 Export</button>
+        <button id="zoom-in-btn">➕ Zoom In</button>
+        <button id="zoom-out-btn">➖ Zoom Out</button>
     </div>
-    <div class="quick-access-bar">
-        <div class="zoom-buttons">
-            <button id="zoom-title">Title</button>
-            <button id="zoom-banner">Banner</button>
-            <button id="zoom-calendar">Calendar</button>
+
+    <!-- Main Editor -->
+    <div class="editor-container">
+        <!-- Calendar Canvas -->
+        <div class="calendar-canvas">
+            {% include 'calendar.html' %}
         </div>
-        <div class="parameters" id="parameters">
-            <!-- Parameters will be dynamically inserted here -->
+
+        <!-- Customization Panel -->
+        <div class="customization-panel">
+            <h3>Customize</h3>
+            <div id="customization-options">
+                <p>Select a calendar element to customize.</p>
+            </div>
         </div>
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const calendarHeader = document.getElementById('calendar-header');
-            const calendarTitle = document.getElementById('calendar-title');
-            const bannerTitle = document.getElementById('banner-title');
-            const bioText = document.getElementById('bio-text');
+            const title = document.getElementById('calendar-title');
+            const subtitle = document.getElementById('calendar-subtitle');
+            const dateCells = document.querySelectorAll('.date-cell');
+            const customizationPanel = document.getElementById('customization-options');
+            const crossOffButton = document.getElementById('cross-off');
             const calendar = document.getElementById('calendar');
-            const parameters = document.getElementById('parameters');
+            const selectedDates = new Set();
 
-            function clearParameters() {
-                parameters.innerHTML = '';
+            let zoomLevel = 1;
+
+            // Populate Customization Panel
+            function customizeElement(element) {
+                customizationPanel.innerHTML = `
+                    <label for="bg-color">Background Color:</label>
+                    <input type="color" id="bg-color" value="${getComputedStyle(element).backgroundColor}">
+
+                    <label for="text-color">Text Color:</label>
+                    <input type="color" id="text-color" value="${getComputedStyle(element).color}">
+
+                    <label for="font-size">Font Size:</label>
+                    <input type="number" id="font-size" value="${parseInt(getComputedStyle(element).fontSize)}">
+
+                    <label for="border-color">Border Color:</label>
+                    <input type="color" id="border-color" value="${getComputedStyle(element).borderColor}">
+
+                    <label for="font-family">Font Family:</label>
+                    <select id="font-family">
+                        <option value="Arial" ${getComputedStyle(element).fontFamily.includes('Arial') ? 'selected' : ''}>Arial</option>
+                        <option value="Verdana" ${getComputedStyle(element).fontFamily.includes('Verdana') ? 'selected' : ''}>Verdana</option>
+                        <option value="Times New Roman" ${getComputedStyle(element).fontFamily.includes('Times New Roman') ? 'selected' : ''}>Times New Roman</option>
+                        <option value="Courier New" ${getComputedStyle(element).fontFamily.includes('Courier New') ? 'selected' : ''}>Courier New</option>
+                    </select>
+                `;
+
+                // Update element on input change
+                customizationPanel.querySelectorAll('input, select').forEach(input => {
+                    input.addEventListener('input', () => {
+                        if (input.id === 'bg-color') element.style.backgroundColor = input.value;
+                        if (input.id === 'text-color') element.style.color = input.value;
+                        if (input.id === 'font-size') element.style.fontSize = input.value + 'px';
+                        if (input.id === 'border-color') element.style.borderColor = input.value;
+                        if (input.id === 'font-family') element.style.fontFamily = input.value;
+                    });
+                });
             }
 
-            function addParameter(labelText, inputType, inputId, inputValue) {
-                const label = document.createElement('label');
-                label.textContent = labelText;
-                const input = document.createElement(inputType);
-                input.id = inputId;
-                input.value = inputValue;
-                input.addEventListener('input', updatePreview);
-                parameters.appendChild(label);
-                parameters.appendChild(input);
+            // Add click events
+            title.addEventListener('click', () => customizeElement(title));
+            subtitle.addEventListener('click', () => customizeElement(subtitle));
+            dateCells.forEach(cell => {
+                cell.addEventListener('click', () => customizeElement(cell));
+            });
+
+            // Toolbar Button Functionality
+            document.getElementById('save-btn').addEventListener('click', () => {
+                const calendarData = {
+                    title: title.textContent,
+                    subtitle: subtitle.textContent,
+                    dates: Array.from(dateCells).map(cell => ({
+                        text: cell.textContent,
+                        backgroundColor: cell.style.backgroundColor,
+                        textColor: cell.style.color,
+                        fontSize: cell.style.fontSize,
+                        borderColor: cell.style.borderColor,
+                        fontFamily: cell.style.fontFamily
+                    }))
+                };
+                const jsonData = JSON.stringify(calendarData, null, 2);
+                downloadJSON(jsonData, 'calendar.json');
+            });
+
+            document.getElementById('zoom-in-btn').addEventListener('click', () => {
+                zoomLevel += 0.1;
+                document.querySelector('.calendar-container').style.transform = `scale(${zoomLevel})`;
+            });
+
+            document.getElementById('zoom-out-btn').addEventListener('click', () => {
+                zoomLevel -= 0.1;
+                document.querySelector('.calendar-container').style.transform = `scale(${zoomLevel})`;
+            });
+
+            function downloadJSON(data, filename) {
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
             }
 
-            function updatePreview() {
-                const titleBannerColor = document.getElementById('title_banner_color');
-                const titleColor = document.getElementById('title_color');
-                const separatorColor = document.getElementById('separator_color');
-                const textColor = document.getElementById('text_color');
-                const titleText = document.getElementById('title_text');
-                const bannerTitleText = document.getElementById('banner_title_text');
-                const bioTextContent = document.getElementById('bio_text');
-                const calendarBorderColor = document.getElementById('calendar_border_color');
-                const backgroundImage = document.getElementById('background_image');
-                const backgroundSpacing = document.getElementById('background_spacing');
-                const backgroundBlur = document.getElementById('background_blur');
-                const backgroundSize = document.getElementById('background_size');
+            // Calendar functionality
+            const dates = Array.from({ length: 31 }, (_, i) => `2024-11-${String(i + 1).padStart(2, '0')}`);
 
-                if (titleBannerColor) calendarHeader.style.backgroundColor = titleBannerColor.value;
-                if (titleColor) calendarTitle.style.color = titleColor.value;
-                if (separatorColor) calendar.style.borderColor = separatorColor.value;
-                if (textColor) {
-                    calendarTitle.style.color = textColor.value;
-                    bannerTitle.style.color = textColor.value;
-                    bioText.style.color = textColor.value;
-                }
-                if (titleText) calendarTitle.textContent = titleText.value;
-                if (bannerTitleText) bannerTitle.textContent = bannerTitleText.value;
-                if (bioTextContent) bioText.textContent = bioTextContent.value;
-                if (calendarBorderColor) calendar.style.borderColor = calendarBorderColor.value;
-                if (backgroundImage) calendar.style.backgroundImage = `url(${URL.createObjectURL(backgroundImage.files[0])})`;
-                if (backgroundSpacing) calendar.style.backgroundSize = `${backgroundSpacing.value}px`;
-                if (backgroundBlur) calendar.style.filter = `blur(${backgroundBlur.value}px)`;
-                if (backgroundSize) calendar.style.backgroundSize = `${backgroundSize.value}px`;
-            }
+            dates.forEach(date => {
+                const day = String(date.split('-')[2]).padStart(2, '0'); // Extract and zero-pad the day
+                const dateElement = document.createElement('div');
+                dateElement.classList.add('date-cell');
+                dateElement.setAttribute('data-day', day); // Add a data-day attribute
+                dateElement.textContent = day; // Display only the day
 
-            calendarTitle.addEventListener('click', () => {
-                clearParameters();
-                addParameter('Title Text', 'input', 'title_text', calendarTitle.textContent);
-                addParameter('Title Color', 'input', 'title_color', calendarTitle.style.color);
+                dateElement.addEventListener('click', () => {
+                    if (!dateElement.classList.contains('consumed')) { // Prevent selection of consumed dates
+                        if (selectedDates.has(date)) {
+                            selectedDates.delete(date);
+                            dateElement.classList.remove('selected');
+                        } else {
+                            selectedDates.add(date);
+                            dateElement.classList.add('selected');
+                        }
+
+                        const totalCost = Array.from(selectedDates)
+                            .map(d => parseInt(d.split('-')[2], 10))
+                            .reduce((sum, d) => sum + d, 0);
+
+                        crossOffButton.textContent = `Cross Off! ($${totalCost})`;
+                        crossOffButton.style.display = selectedDates.size > 0 ? 'block' : 'none';
+                    }
+                });
+
+                calendar.appendChild(dateElement);
             });
 
-            calendarHeader.addEventListener('click', () => {
-                clearParameters();
-                addParameter('Title Banner Color', 'input', 'title_banner_color', calendarHeader.style.backgroundColor);
-                addParameter('Upload Banner Image', 'file', 'banner_image', '');
+            crossOffButton.addEventListener('click', () => {
+                const selectedDatesArray = Array.from(selectedDates);
+                const userEmail = 'user@example.com';  
+                fetch('/create-date-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ dates: selectedDatesArray.join(','), email: userEmail })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.url) {
+                        window.location.href = data.url;
+                    } else {
+                        console.error('Error creating checkout session:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
             });
 
-            bannerTitle.addEventListener('click', () => {
-                clearParameters();
-                addParameter('Banner Title Text', 'input', 'banner_title_text', bannerTitle.textContent);
-                addParameter('Text Color', 'input', 'text_color', bannerTitle.style.color);
-            });
+            fetch('/get-consumed-dates')
+            .then(response => response.json())
+            .then(data => {
+                const consumedDates = data.consumed_dates;
 
-            bioText.addEventListener('click', () => {
-                clearParameters();
-                addParameter('Bio Text', 'textarea', 'bio_text', bioText.textContent);
-                addParameter('Text Color', 'input', 'text_color', bioText.style.color);
-            });
-
-            calendar.addEventListener('click', () => {
-                clearParameters();
-                addParameter('Calendar Border Color', 'input', 'calendar_border_color', calendar.style.borderColor);
-                addParameter('Upload Background Image', 'file', 'background_image', '');
-                addParameter('Background Image Spacing', 'input', 'background_spacing', '');
-                addParameter('Background Image Blur', 'input', 'background_blur', '');
-                addParameter('Background Image Size', 'input', 'background_size', '');
-            });
-
-            document.getElementById('zoom-title').addEventListener('click', () => {
-                calendarTitle.scrollIntoView({ behavior: 'smooth' });
-            });
-
-            document.getElementById('zoom-banner').addEventListener('click', () => {
-                bannerTitle.scrollIntoView({ behavior: 'smooth' });
-            });
-
-            document.getElementById('zoom-calendar').addEventListener('click', () => {
-                calendar.scrollIntoView({ behavior: 'smooth' });
+                Object.entries(consumedDates).forEach(([day, isConsumed]) => {
+                    if (isConsumed) {
+                        const dateElement = document.querySelector(`.date-cell[data-day="${day}"]`);
+                        if (dateElement) {
+                            dateElement.classList.add('consumed');
+                            dateElement.textContent = ''; // Show the day with a check mark
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching consumed dates:', error);
             });
         });
     </script>
 </body>
 </html>
-

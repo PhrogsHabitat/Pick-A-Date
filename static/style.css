@@ -290,6 +290,8 @@ button:disabled {
     text-align: center;
     font-size: 1rem;
     cursor: pointer;
+    width: 3rem;
+    height: 2.5rem;
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
@@ -511,3 +513,5 @@ form input:focus {
     object-fit: cover; /* Ensure the image fits well inside the circle */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
     }
+
+

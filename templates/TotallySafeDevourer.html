@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Success</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('/update-consumed-dates')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/calendar';
+                    } else {
+                        console.error('Error updating consumed dates:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+</head>
+<body>
+    <h1>Payment Successful!</h1>
+    <p>Redirecting to your calendar...</p>
+</body>
+</html>
+
