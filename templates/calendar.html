@@ -115,6 +115,7 @@
 
 </head>
 <body>
+    <!-- Navigation Bar -->
     <div class="sidebar">
         <div class="nav-item" title="Home">
             <a href="{{ url_for('home') }}">
@@ -128,11 +129,23 @@
                 <span class="label">Calendar</span>
             </a>
         </div>
+
         {% if token_type == "DOM" %}
-        <div class="nav-item" title="Calendar Builder" id="builder-icon">
-            <a href="{{ url_for('customize_calendar') }}"></a>
+        <div class="nav-item" title="Calendar Builder" id="Calendar">
+            <a href="{{ url_for('customize_calendar') }}">
             <span class="icon" id="calbld">⚙️</span>
             <span class="label">Calendar Builder</span>
+            </a>
+        </div>
+        {% endif %}
+
+        
+        {% if current_user.is_authenticated %}
+        <div class="nav-item profile-item" title="{{ current_user.username }}">
+            <a href="{{ url_for('profile') }}">
+                <img src="{{ url_for('static', filename='profile_pictures/' + current_user.username + '.jpg') }}" alt="Profile Picture" class="profile-icon">
+                <span class="label">{{ current_user.username }}</span>
+            </a>
         </div>
         {% endif %}
     </div>
@@ -148,10 +161,38 @@
 
     <main>
         <section id="my-calendar">
-            <h2>My Calendar</h2>
-            <p>Select a date below to support C.R.A.S.H. Robotics.</p>
-            <div id="calendar"></div>
-            <button id="cross-off" style="display: none;">Cross Off!</button>
+            <h2>
+                <span id="calendar-title">{{ cal_title }}</span>
+                {% if user_signed_in == "TRUE" and token_type == "DOM" %}
+                    <span id="edit-icon" style="cursor: pointer;">✏️</span>
+                {% endif %}
+            </h2>
+            <form id="title-form" method="POST" style="display: none;">
+                <input type="text" name="calendar_title" id="calendar-title-input" value="{{ cal_title }}">
+                <button type="submit">Save</button>
+            </form>
+            {% if user_signed_in == "TRUE" %}
+                {% if user_has_token == "TRUE" %}
+                    <p>Your Token: {{ user_has_token }}</p>
+                    <div id="calendar"></div>
+                {% else %}
+                    <div id="calendar" style="filter: blur(2px);"></div>
+                    <div class="button-container">
+                        <div class="dropdown">
+                            <button id="grab-token-btn">Grab a Token!</button>
+                        </div>
+                        <div class="dropdown">
+                            <button id="have-token-btn">Have a token?</button>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div id="calendar" style="filter: blur(2px);"></div>
+                <div class="button-container">
+                    <button onclick="location.href='{{ url_for('signup') }}'">Sign Up</button>
+                    <button onclick="location.href='{{ url_for('login') }}'">Log In</button>
+                </div>
+            {% endif %}
         </section>
         <section>
             <h2>How It Works</h2>
@@ -159,7 +200,6 @@
             <ol>
                 <li>Select one or more dates from the calendar. Each date you pick helps us raise money.</li>
             </ol>
-            <p>This is a fun and interactive way to support us and see how much progress we make together!</p>
         </section>
     </main>
 
@@ -231,47 +271,46 @@
                 tokenSubmenu.style.display = 'block';
             });
             
-            tokenForm.addEventListener('submit', function(event) {
+            tokenForm.addEventListener('submit', function (event) {
                 event.preventDefault();
                 const token = document.getElementById('token-input').value;
-    
+            
                 fetch('/verify-token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: token })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        tokenDisplay.textContent = `Token: ${data.token}`;
-                        emailDisplay.textContent = `Email: ${data.email}`;
-                        verifyBtn.style.display = 'block';
-                        tokenResult.style.display = 'block';
-                    } else {
-                        alert('Token not found!');
-                    }
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            tokenDisplay.textContent = `Token: ${data.token}`;
+                            emailDisplay.textContent = `Email: ${data.email}`;
+                            verifyBtn.style.display = 'block';
+                            tokenResult.style.display = 'block';
+                        } else {
+                            alert('Token not found!');
+                        }
+                    });
             });
-    
-            verifyBtn.addEventListener('click', function() {
+            
+            verifyBtn.addEventListener('click', function () {
                 const token = tokenDisplay.textContent.split(': ')[1];
                 const email = emailDisplay.textContent.split(': ')[1];
-    
+            
                 fetch('/send-verification-email', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: token, email: email })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Verification email sent to the token owner!');
-                    } else {
-                        alert('Failed to send verification email.');
-                    }
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Verification email sent to the token owner!');
+                        } else {
+                            alert('Failed to send verification email.');
+                        }
+                    });
             });
-        });
             
 
             function startPollingForApproval() {
@@ -354,6 +393,16 @@
             }
         });
 
+
+
+
+
+
+
+
+
+
+
         document.addEventListener('DOMContentLoaded', function() {
             const editIcon = document.getElementById('edit-icon');
             const customizationPanel = document.getElementById('customization-panel');
@@ -364,6 +413,14 @@
                 });
             }
         });
+
+
+
+
+
+
+
+
 
         document.addEventListener('DOMContentLoaded', () => {
             const builderIcon = document.getElementById('builder-icon');
@@ -378,6 +435,69 @@
     </script>
 
     <style>
+        
+            #dim-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 10;
+            }
+    
+            #submenu, #token-submenu {
+                display: none;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 500px;
+                background: white;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                z-index: 20;
+                animation: slideDown 0.5s ease-out;
+            }
+    
+            .submenu-header {
+                background: #0078d4; /* Match the blue color */
+                padding: 20px;
+                text-align: center;
+                font-size: 2rem;
+                color: white;
+            }
+    
+            .submenu-content {
+                padding: 20px;
+                text-align: center;
+            }
+    
+            @keyframes slideDown {
+                from {
+                    top: 40%;
+                    opacity: 0;
+                }
+                to {
+                    top: 50%;
+                    opacity: 1;
+                }
+            }
+    
+            .bounce {
+                animation: bounce 0.3s;
+            }
+    
+            @keyframes bounce {
+                0%, 100% {
+                    transform: translateY(0);
+                }
+                50% {
+                    transform: translateY(-10px);
+                }
+            }
         #dim-overlay {
             display: none;
             position: fixed;

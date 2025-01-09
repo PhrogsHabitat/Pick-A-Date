@@ -831,14 +831,3 @@ def payment_success():
 
     return redirect(url_for('calendar'))
 
-@app.route('/customize_calendar')
-@login_required
-def customize_calendar():
-    customizations = {
-        'text_color': '#000000',
-        'border_color': '#cccccc',
-        'font_style': 'Arial',
-        'title_text': 'My Calendar',
-        'icon': None
-    }
-    return render_template("calendar_builder.html", customizations=customizations)

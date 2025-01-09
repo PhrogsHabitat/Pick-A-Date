@@ -46,7 +46,7 @@ worksheet.update_cell(2, 1, 'Admin')
 def find_empty(col):
     column_values = worksheet.col_values(col)  # Change the column index if needed
     for index, value in enumerate(column_values):
-        # print(f'Row {index + 1}: "{value}"')  # Debugging: print each cell value
+        print(f'Row {index + 1}: "{value}"')  # Debugging: print each cell value
         if not value:
             print(f'Empty cell found at row {index + 1}')
             empty_column = index + 1

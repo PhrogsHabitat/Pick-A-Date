@@ -17,13 +17,14 @@ body {
     left: 0;
     width: 60px;
     height: 100%;
-    background: #2c3e50;
+    background: #913a38; /* Change to a lighter red color */
     transition: width 0.3s ease;
     z-index: 1000;
     display: flex;
     flex-direction: column;
     align-items: center;
     overflow: hidden;
+    justify-content: space-between; /* Ensure items are spaced out */
 }
 
 .sidebar:hover {
@@ -42,7 +43,7 @@ body {
 }
 
 .nav-item:hover {
-    background: #34495e;
+    background: #85403e; /* Change to a slightly darker red color */
 }
 
 .nav-item a {
@@ -107,7 +108,7 @@ body {
 header {
     margin-left: 60px; /* Sidebar width */
     padding: 20px;
-    background: #ecf0f1;
+    background: #ca4540; /* Change to a lighter red color */
     color: #2c3e50;
 }
 
@@ -135,7 +136,7 @@ main {
 .date {
     background-color: #eaf2f8;
     padding: 1rem;
-    border: 1px solid #0078d4;
+    border: 1px solid #d9534f; /* Change to a lighter red color */
     border-radius: 5px;
     text-align: center;
     cursor: pointer;
@@ -143,12 +144,12 @@ main {
 }
 
 .date:hover {
-    background-color: #cce6f7;
+    background-color: #f7b7b5; /* Change to a lighter red color */
     transform: scale(1.05);
 }
 
 .date.selected {
-    background-color: #0078d4;
+    background-color: #d9534f; /* Change to a lighter red color */
     color: white;
 }
 
@@ -158,7 +159,7 @@ main {
     animation: fadeIn 0.5s ease;
     display: inline-block;
     padding: 0.5rem 1rem;
-    background: #0078d4;
+    background: #d9534f; /* Change to a lighter red color */
     color: white;
     border: none;
     border-radius: 4px;
@@ -167,7 +168,7 @@ main {
 }
 
 #cross-off:hover {
-    background: #005bb5;
+    background: #c9302c; /* Change to a slightly darker red color */
 }
 
 
@@ -182,7 +183,7 @@ main {
 .date {
     background-color: #eaf2f8;
     padding: 1rem;
-    border: 1px solid #0078d4;
+    border: 1px solid #d9534f; /* Change to a lighter red color */
     border-radius: 5px;
     text-align: center;
     cursor: pointer;
@@ -190,12 +191,12 @@ main {
 }
 
 .date:hover {
-    background-color: #cce6f7;
+    background-color: #f7b7b5; /* Change to a lighter red color */
     transform: scale(1.05);
 }
 
 .date.selected {
-    background-color: #0078d4;
+    background-color: #d9534f; /* Change to a lighter red color */
     color: white;
 }
 
@@ -216,7 +217,7 @@ body {
 }
 
 header {
-    background-color: #0078d4;
+    background-color: #ff5353; /* Change to a lighter red color */
     color: white;
     padding: 1rem 2rem;
     text-align: center;
@@ -245,9 +246,8 @@ section {
 
 section h2 {
     margin-top: 0;
-    color: #0078d4;
-    border-bottom: 2px solid #0078d4;
-    padding-bottom: 0.5rem;
+    color: #d9534f; /* Change to a lighter red color */
+    border-bottom: 2px solid #d9534f; /* Change to a lighter red color */
 }
 
 /* Buttons */
@@ -255,7 +255,7 @@ button {
     display: inline-block;
     padding: 0.7rem 1.5rem;
     font-size: 1rem;
-    background-color: #0078d4;
+    background-color: #d9534f; /* Change to a lighter red color */
     color: white;
     border: none;
     border-radius: 5px;
@@ -265,7 +265,7 @@ button {
 }
 
 button:hover {
-    background-color: #005fa3;
+    background-color: #c9302c; /* Change to a slightly darker red color */
     transform: scale(1.05);
 }
 
@@ -285,7 +285,7 @@ button:disabled {
 .date {
     background-color: #eaf2f8;
     padding: 1rem;
-    border: 1px solid #0078d4;
+    border: 1px solid #d9534f; /* Change to a lighter red color */
     border-radius: 5px;
     text-align: center;
     font-size: 1rem;
@@ -296,12 +296,12 @@ button:disabled {
 }
 
 .date:hover {
-    background-color: #cce6f7;
+    background-color: #f7b7b5; /* Change to a lighter red color */
     transform: scale(1.05);
 }
 
 .date.selected {
-    background-color: #0078d4;
+    background-color: #d9534f; /* Change to a lighter red color */
     color: white;
 }
 
@@ -468,7 +468,7 @@ form input:focus {
 }
 
 .submenu-header {
-    background: #0078d4; /* Match the blue color */
+    background: #d9534f; /* Change to a lighter red color */
     padding: 20px;
     text-align: center;
     font-size: 2rem;
@@ -515,3 +515,61 @@ form input:focus {
     }
 
 
+a {
+
+    text-decoration: underline;
+    color: #b90f0f;
+}
+
+/* Profile Item */
+.profile-item {
+    margin-top: auto; /* Push to the bottom */
+    padding-bottom: 20px; /* Add some padding at the bottom */
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.profile-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover; /* Ensure the image fits well inside the circle */
+    border: 4px solid rgb(170, 64, 64); /* Add light blue border */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5); /* Optional: Add a subtle shadow */
+}
+
+.profile-item .label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: 10px;
+    max-width: 100px; 
+}
+#calbld.icon{
+    filter: brightness(5) grayscale(100%); /* Ensures all icons appear white */
+
+}
+
+.nav-item .label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: 10px;
+    max-width: 100px; 
+}
+
+
+
+.profile-login{
+    width: 40px;
+    height: 40px;
+    object-fit: cover; /* Ensure the image fits well inside the circle */
+}
+
+.stroke{
+    filter: drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 1px #ffffff) drop-shadow(0 0 1px #ffffff); /* Adjust the color and size of the outline */
+
+  }
