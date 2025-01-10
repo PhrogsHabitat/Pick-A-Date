@@ -8,12 +8,12 @@
 
     <header>
         {% if current_user.is_authenticated %}
-            <a class="profile-info" href="https://www.facebook.com/p/CRASH-Crestview-Robotics-and-STEM-Hub-61558327021839/"><img src="{{ url_for('static', filename='assets/images/main/CRASH.png') }}" alt="CRASH LOGO"></a>
+            <a class="profile-info" href="https://www.facebook.com/p/CRASH-Crestview-Robotics-and-STEM-Hub-61558327021839/"><img src="{{ url_for('static', filename='images/main/crash.jpg') }}" alt="CRASH LOGO"></a>
         {% else %}
             <div>
                 <a href="{{ url_for('signup') }} ">SIGNUP</a> OR <a href="{{ url_for('login') }}">LOG IN</a>
             </div>
-            <a class="profile-info" href="https://www.facebook.com/p/CRASH-Crestview-Robotics-and-STEM-Hub-61558327021839/"><img src="{{ url_for('static', filename='assets/images/main/CRASH.png') }}" alt="CRASH LOGO"></a>
+            <a class="profile-info" href="https://www.facebook.com/p/CRASH-Crestview-Robotics-and-STEM-Hub-61558327021839/"><img src="{{ url_for('static', filename='images/main/crash.jpg') }}" alt="CRASH LOGO"></a>
             
         {% endif %}
     </header>
@@ -58,7 +58,7 @@
         <section>
             <h2>About Us</h2>
             <p>We are a passionate group of robotics enthusiasts dedicated to building, innovating, and competing in the world of robotics.</p>
-            <p>Located in [Your Location], we have achieved [Your Achievements].</p>
+            <p>Located in Crestview Florida - We don't just build robots, we build students.</p>
         </section>
         <section>
             <h2>Our Fundraising Goal</h2>

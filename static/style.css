@@ -509,7 +509,7 @@ form input:focus {
     width: 150px; /* Adjust size as needed */
     height: 150px; /* Keep dimensions equal for a perfect circle */
     border-radius: 50%; /* Make the image circular */
-    border: 5px solid rgb(146, 207, 228); /* Add light blue border */
+    border: 10px solid rgb(170, 64, 64); /* Add light blue border */
     object-fit: cover; /* Ensure the image fits well inside the circle */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
     }
@@ -537,7 +537,7 @@ a {
     height: 40px;
     border-radius: 50%;
     object-fit: cover; /* Ensure the image fits well inside the circle */
-    border: 4px solid rgb(170, 64, 64); /* Add light blue border */
+    border: 4px solid rgb(170, 64, 64); 
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5); /* Optional: Add a subtle shadow */
 }
 

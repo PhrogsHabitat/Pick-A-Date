@@ -51,14 +51,14 @@
             width: 120px;
             height: 120px;
             border-radius: 50%;
-            border: 6px solid #0078d4;
+            border: 6px solid rgb(170, 64, 64);
             object-fit: cover;
             margin-bottom: 15px;
         }
 
         .profile-card h1 {
             font-size: 1.5rem;
-            color: #0078d4;
+            color:rgb(170, 64, 64);
             margin-bottom: 10px;
         }
 
@@ -78,7 +78,7 @@
         }
 
         .profile-card button {
-            background-color: #0078d4;
+            background-color:rgb(170, 64, 64);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -88,14 +88,13 @@
         }
 
         .profile-card button:hover {
-            background-color: #005bb5;
+            background-color: rgb(197, 106, 106);
         }
 
         .logout button {
             background-color: #e81123;
             color: white;
             border: none;
-            padding: 10px 20px;
             font-size: 1rem;
             border-radius: 6px;
             cursor: pointer;
@@ -117,11 +116,11 @@
         }
 
         .gift-token-form button {
-            background-color: #28a745;
+            background-color:rgb(55, 175, 83);
         }
 
         .gift-token-form button:hover {
-            background-color: #218838;
+            background-color:rgb(120, 206, 138);
         }
 
         .popup-message {
@@ -130,7 +129,7 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            background-color: #0078d4;
+            background-color:rgb(128, 21, 30);
             color: white;
             padding: 10px 20px;
             border-radius: 0 0 10px 10px;
@@ -141,7 +140,7 @@
         }
 
         .popup-message.error {
-            background-color: #e81123;
+            background-color:rgb(167, 21, 33);
         }
 
         .popup-message .progress-bar {
@@ -212,7 +211,7 @@
                 <button type="submit">Upload New Picture</button>
             </form>
             
-            <button onclick="toggleGiftTokenForm()">Gift a Token</button>
+            <button onclick="toggleGiftTokenForm()" style="margin-top: 20px; background-color:rgb(238, 98, 98);">Gift a Token</button>
             <div class="gift-token-form" id="giftTokenForm">
                 <form action="{{ url_for('gift_token') }}" method="post">
                     <input type="text" name="token" placeholder="Token to gift" required>

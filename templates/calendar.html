@@ -9,14 +9,34 @@
     <style>
         #calendar {
             color: {{ customizations.text_color }};
-            border: 2px solid {{ customizations.border_color }};
             font-family: {{ customizations.font_style }};
         }
 
         .date-box {
-            width: {{ customizations.box_size }}px;
-            height: {{ customizations.box_size }}px;
+            color: {{ customizations.date_box_text_color }};
+            border-color: {{ customizations.date_box_text_color }};
         }
+        .date {
+            background-color: #eaf2f8;
+            padding: 1rem;
+            border: 1px solid {% if customizations.date_box_text_color %}{{ customizations.date_box_text_color }}{% else %}#d9534f{% endif %};;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        
+        .date:hover {
+            background-color: {{ customizations.date_box_text_color }};
+            transform: scale(1.05);
+        }
+        
+        .date.selected {
+            background-color: {{ customizations.date_box_text_color }};
+            color: white;
+        }
+        
+        
 
         #calendar-title {
             color: {{ customizations.text_color }};
@@ -35,6 +55,12 @@
             transform: translate(-50%, -50%);
             font-size: 1.5em;
         }
+            #calendar {
+                background-image: {% if customizations.background_image %}url('{{ url_for('static', filename='profile_pictures/' + customizations.background_image) }}'){% else %}none{% endif %};
+                background-size: {{ customizations.background_size }}%;
+                filter: blur({{ customizations.background_blur }}px);
+            }
+        
     </style>
 
     <script>
@@ -150,31 +176,36 @@
         {% endif %}
     </div>
 
-    <header>
-        <h1 id="calendar-title">{{ customizations.title_text }}
+    <header style="background-color: {{ customizations.title_banner_color }};background-image: {% if customizations.background_image %}url('{{ url_for('static', filename='profile_pictures/' + customizations.banner_image) }}'){% else %}none{% endif %};
+">
+        <h1 id="calendar-title" style="color: {{ customizations.banner_text_color }};">
+            {{ customizations.banner_title_text }}
             {% if customizations.icon %}
-            <img src="{{ url_for('static', filename='profile_pictures/' + customizations.icon) }}" alt="Icon" style="height: 50px; vertical-align: middle;">
+                <img src="{{ url_for('static', filename='profile_pictures/' + customizations.icon) }}" alt="Icon" style="height: 50px; vertical-align: middle;">
             {% endif %}
         </h1>
         <p>Total Raised: ${{ data['total_raised'] }}</p>
     </header>
+    
 
     <main>
         <section id="my-calendar">
             <h2>
-                <span id="calendar-title">{{ cal_title }}</span>
-                {% if user_signed_in == "TRUE" and token_type == "DOM" %}
-                    <span id="edit-icon" style="cursor: pointer;">✏️</span>
-                {% endif %}
+                <span id="calendar-title"style="color: {{ customizations.title_color }}">{{ customizations.title_text }} </span>
+
             </h2>
+
+
+            <p style="color: {{ customizations.bio_text_color }};">{{ customizations.bio_text }}</p>
+
             <form id="title-form" method="POST" style="display: none;">
                 <input type="text" name="calendar_title" id="calendar-title-input" value="{{ cal_title }}">
                 <button type="submit">Save</button>
             </form>
-            {% if user_signed_in == "TRUE" %}
-                {% if user_has_token == "TRUE" %}
-                    <p>Your Token: {{ user_has_token }}</p>
+            {% if user_signed_in == "TRUE" or viewing_user %}
+                {% if user_has_token == "TRUE" or viewing_user %}
                     <div id="calendar"></div>
+                    <button id="cross-off" style="display: none;">Cross Off!</button>
                 {% else %}
                     <div id="calendar" style="filter: blur(2px);"></div>
                     <div class="button-container">
@@ -354,7 +385,7 @@
                 console.log('updateTotalCost called');
                 const tokenCount = parseInt(tokenCountInput.value) || 0;
                 const subtokenCount = parseInt(subtokenCountInput.value) || 0;
-                const totalCost = ((tokenCount * 10) + (subtokenCount * 5));
+                const totalCost = ((tokenCount * 10) + (subtokenCount * 10));
                 const totalCostElement = document.getElementById('total-cost');
                 totalCostElement.textContent = totalCost;
                 totalCostElement.classList.remove('bounce');
@@ -393,16 +424,6 @@
             }
         });
 
-
-
-
-
-
-
-
-
-
-
         document.addEventListener('DOMContentLoaded', function() {
             const editIcon = document.getElementById('edit-icon');
             const customizationPanel = document.getElementById('customization-panel');
@@ -413,14 +434,6 @@
                 });
             }
         });
-
-
-
-
-
-
-
-
 
         document.addEventListener('DOMContentLoaded', () => {
             const builderIcon = document.getElementById('builder-icon');
@@ -435,69 +448,6 @@
     </script>
 
     <style>
-        
-            #dim-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 10;
-            }
-    
-            #submenu, #token-submenu {
-                display: none;
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 500px;
-                background: white;
-                border-radius: 10px;
-                overflow: hidden;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                z-index: 20;
-                animation: slideDown 0.5s ease-out;
-            }
-    
-            .submenu-header {
-                background: #0078d4; /* Match the blue color */
-                padding: 20px;
-                text-align: center;
-                font-size: 2rem;
-                color: white;
-            }
-    
-            .submenu-content {
-                padding: 20px;
-                text-align: center;
-            }
-    
-            @keyframes slideDown {
-                from {
-                    top: 40%;
-                    opacity: 0;
-                }
-                to {
-                    top: 50%;
-                    opacity: 1;
-                }
-            }
-    
-            .bounce {
-                animation: bounce 0.3s;
-            }
-    
-            @keyframes bounce {
-                0%, 100% {
-                    transform: translateY(0);
-                }
-                50% {
-                    transform: translateY(-10px);
-                }
-            }
         #dim-overlay {
             display: none;
             position: fixed;

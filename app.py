@@ -103,33 +103,63 @@ def send_email(to, subject, body):
 def home():
     return render_template("home.html")
 
-@app.route("/calendar", methods=["GET", "POST"])
-def calendar():
-    data = load_data()
-    
-    if current_user.is_authenticated:
-        user_email = current_user.email  # Fetch current user's email
-        user_signed_in = google_sheets.get_cell_value(user_email, "IsSignedIn")
-        user_has_token = google_sheets.get_cell_value(user_email, "HasToken")
-        token_type = google_sheets.get_cell_value(user_email, "TokenType")
-        cal_title = google_sheets.get_cell_value(user_email, "CAL-Title") or "My Calendar"
-        
-        # Retrieve customizations from Google Sheets or set defaults
-        customizations = {
-            "text_color": google_sheets.get_cell_value(user_email, "CAL-TextColor") or "#000000",
-            "border_color": google_sheets.get_cell_value(user_email, "CAL-BorderColor") or "#0078d4",
-            "font_style": google_sheets.get_cell_value(user_email, "CAL-FontStyle") or "Arial",
-            "box_size": google_sheets.get_cell_value(user_email, "CAL-BoxSize") or "100",
-            "title_text": cal_title,
-            "icon": google_sheets.get_cell_value(user_email, "CAL-Icon")
+def load_customizations(email):
+    customizations_json = google_sheets.get_cell_value(email, "CAL-Customs")
+    if (customizations_json):
+        return json.loads(customizations_json)
+    else:
+        return {
+            "title_banner_color": None,
+            "title_color": None,
+            "separator_color": None,
+            "text_color": None,
+            "title_text": "My Calendar",
+            "banner_title_text": "My Calendar",
+            "bio_text": "Select a date below to support C.R.A.S.H. Robotics.",
+            "calendar_border_color": None,
+            "background_spacing": None,
+            "background_blur": None,
+            "background_size": None,
+            "banner_text": "My Calendar",
+            "calendar_title_text": "My Calendar",
+            "icon": None,
+            "background_image": None,
+            "banner_image": None
         }
 
-        if request.method == "POST":
-            # Handle calendar title update
+def save_customizations(email, customizations):
+    customizations_json = json.dumps(customizations, indent=4)
+    google_sheets.set_cell_value(email, "CAL-Customs", customizations_json)
+
+@app.route("/calendar", methods=["GET", "POST"])
+@app.route("/calendar/<email>/view", methods=["GET", "POST"])
+def calendar(email=None):
+    data = load_data()
+    viewing_user = False
+
+    if email:
+        user_email = email
+        viewing_user = True
+    elif current_user.is_authenticated:
+        user_email = current_user.email
+    else:
+        return redirect(url_for('login'))
+
+    user_signed_in = google_sheets.get_cell_value(user_email, "IsSignedIn")
+    user_has_token = google_sheets.get_cell_value(user_email, "HasToken")
+    token_type = google_sheets.get_cell_value(user_email, "TokenType")
+    cal_title = google_sheets.get_cell_value(user_email, "CAL-Title") or "My Calendar"
+
+    customizations = load_customizations(user_email)
+    print(customizations)
+
+
+    if request.method == "POST":
+        if not viewing_user:
             new_title = request.form.get("calendar_title")
             if new_title:
-                google_sheets.set_cell_value(user_email, "CAL-Title", new_title)
                 customizations["title_text"] = new_title
+                save_customizations(user_email, customizations)
                 return render_template(
                     "calendar.html", 
                     data=data, 
@@ -137,19 +167,10 @@ def calendar():
                     user_has_token=user_has_token, 
                     token_type=token_type, 
                     cal_title=new_title, 
-                    customizations=customizations
+                    customizations=customizations,
+                    viewing_user=viewing_user
                 )
 
-        print(f"user_signed_in: {user_signed_in}, user_has_token: {user_has_token}, token_type: {token_type}, cal_title: {cal_title}, customizations: {customizations}")  # Debug
-    else:
-        user_signed_in = "False"
-        user_has_token = "False"
-        token_type = ""
-        cal_title = "My Calendar"
-        customizations = {}
-
-    if request.method == "POST":
-        # Handle date selection for checkout
         selected_dates = request.form.getlist("selected_dates[]")
         return redirect(url_for("checkout", dates=",".join(selected_dates)))
 
@@ -160,9 +181,9 @@ def calendar():
         user_has_token=user_has_token, 
         token_type=token_type, 
         cal_title=cal_title, 
-        customizations=customizations
+        customizations=customizations,
+        viewing_user=viewing_user
     )
-
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
@@ -674,21 +695,27 @@ def upload_profile_picture():
 def customize_calendar():
     if current_user.is_authenticated and get_cell_value(current_user.email, "TokenType") == "DOM":
         if request.method == "POST":
-            customizations = {
+            customizations = load_customizations(current_user.email)
+            
+            # Update customizations with form data
+            customizations.update({
                 "title_banner_color": request.form.get("title_banner_color"),
                 "title_color": request.form.get("title_color"),
-                "separator_color": request.form.get("separator_color"),
-                "text_color": request.form.get("text_color"),
+                "banner_text_color": request.form.get("banner_text_color"),
                 "title_text": request.form.get("title_text"),
                 "banner_title_text": request.form.get("banner_title_text"),
                 "bio_text": request.form.get("bio_text"),
-                "calendar_border_color": request.form.get("calendar_border_color"),
+                "bio_text_color": request.form.get("bio_text_color"),
                 "background_spacing": request.form.get("background_spacing"),
                 "background_blur": request.form.get("background_blur"),
                 "background_size": request.form.get("background_size"),
+                "date_box_text_color": request.form.get("date_box_text_color"),
                 "icon": None,
-                "background_image": None
-            }
+                "background_image": None,
+                "banner_image": None
+            })
+
+            # Handle file uploads
             icon = request.files.get("icon")
             if icon and allowed_file(icon.filename):
                 filename = secure_filename(icon.filename)
@@ -701,27 +728,18 @@ def customize_calendar():
                 background_image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 customizations["background_image"] = filename
 
-            # Save customizations to Google Sheets
-            user_email = current_user.email
-            google_sheets.set_cell_value(user_email, "CAL-TitleBannerColor", customizations["title_banner_color"])
-            google_sheets.set_cell_value(user_email, "CAL-TitleColor", customizations["title_color"])
-            google_sheets.set_cell_value(user_email, "CAL-SeparatorColor", customizations["separator_color"])
-            google_sheets.set_cell_value(user_email, "CAL-TextColor", customizations["text_color"])
-            google_sheets.set_cell_value(user_email, "CAL-TitleText", customizations["title_text"])
-            google_sheets.set_cell_value(user_email, "CAL-BannerTitleText", customizations["banner_title_text"])
-            google_sheets.set_cell_value(user_email, "CAL-BioText", customizations["bio_text"])
-            google_sheets.set_cell_value(user_email, "CAL-CalendarBorderColor", customizations["calendar_border_color"])
-            google_sheets.set_cell_value(user_email, "CAL-BackgroundSpacing", customizations["background_spacing"])
-            google_sheets.set_cell_value(user_email, "CAL-BackgroundBlur", customizations["background_blur"])
-            google_sheets.set_cell_value(user_email, "CAL-BackgroundSize", customizations["background_size"])
-            if customizations["icon"]:
-                google_sheets.set_cell_value(user_email, "CAL-Icon", customizations["icon"])
-            if customizations["background_image"]:
-                google_sheets.set_cell_value(user_email, "CAL-BackgroundImage", customizations["background_image"])
+            banner_image = request.files.get("banner_image")
+            if banner_image and allowed_file(banner_image.filename):
+                filename = secure_filename(banner_image.filename)
+                banner_image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                customizations["banner_image"] = filename
 
+            save_customizations(current_user.email, customizations)
             return redirect(url_for("calendar"))
+
         return render_template("calendar_builder.html")
     return redirect(url_for("calendar"))
+
 
 @app.route('/gift_token', methods=['POST'])
 @login_required
@@ -832,36 +850,22 @@ def payment_success():
     return redirect(url_for('calendar'))
 
 
-@app.route('/calendar/<token>/view', methods=['GET'])
-def view_calendar(token):
+@app.route('/calendar/<email>/view', methods=['GET'])
+def public_calendar_view(email):
     try:
-        user_email = google_sheets.get_cell_value(token, "Email")
-        if not user_email:
-            return "Invalid token", 404
-
-        customizations = {
-            "text_color": google_sheets.get_cell_value(user_email, "CAL-TextColor") or "#000000",
-            "border_color": google_sheets.get_cell_value(user_email, "CAL-BorderColor") or "#0078d4",
-            "font_style": google_sheets.get_cell_value(user_email, "CAL-FontStyle") or "Arial",
-            "box_size": google_sheets.get_cell_value(user_email, "CAL-BoxSize") or "100",
-            "title_text": google_sheets.get_cell_value(user_email, "CAL-Title") or "My Calendar",
-            "icon": google_sheets.get_cell_value(user_email, "CAL-Icon"),
-            "background_image": google_sheets.get_cell_value(user_email, "CAL-BackgroundImage"),
-            "bio_text": google_sheets.get_cell_value(user_email, "CAL-BioText"),
-        }
-
-        data = {
-            'total_raised': 1000  # Replace with actual data retrieval logic
-        }
+        customizations = load_customizations(email)
+        
+        print(customizations)
+        
+        data = load_data()  # Load fundraising or other calendar-specific data
 
         return render_template(
-            'calendar.html',
+            "calendar.html",
             data=data,
-            user_signed_in="FALSE",
-            user_has_token="TRUE",
-            token_type="DOM",
             cal_title=customizations["title_text"],
-            customizations=customizations
+            customizations=customizations,
+            user_signed_in="FALSE",
+            user_has_token="FALSE"
         )
     except KeyError:
-        return "Invalid token", 404
+        return "Calendar not available for this email.", 404

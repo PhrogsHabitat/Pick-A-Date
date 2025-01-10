@@ -21,7 +21,7 @@ def preload_google_sheets():
     creds = ServiceAccountCredentials.from_json_keyfile_name("database-445718-b3f994a39306.json", scope)
     client = gspread.authorize(creds)
     sheet = client.open("Database").sheet1
-    expected_headers = ["Email", "Token", "Xtra", "HasToken"]  # Adjust this list based on your actual headers
+    expected_headers = ["Email", "Token", "Xtra", "HasToken", "CAL-Customs"]  # Adjust this list based on your actual headers
     data = sheet.get_all_records(expected_headers=expected_headers)
     cache = {row['Email']: row for row in data}
 
