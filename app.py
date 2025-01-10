@@ -831,3 +831,37 @@ def payment_success():
 
     return redirect(url_for('calendar'))
 
+
+@app.route('/calendar/<token>/view', methods=['GET'])
+def view_calendar(token):
+    try:
+        user_email = google_sheets.get_cell_value(token, "Email")
+        if not user_email:
+            return "Invalid token", 404
+
+        customizations = {
+            "text_color": google_sheets.get_cell_value(user_email, "CAL-TextColor") or "#000000",
+            "border_color": google_sheets.get_cell_value(user_email, "CAL-BorderColor") or "#0078d4",
+            "font_style": google_sheets.get_cell_value(user_email, "CAL-FontStyle") or "Arial",
+            "box_size": google_sheets.get_cell_value(user_email, "CAL-BoxSize") or "100",
+            "title_text": google_sheets.get_cell_value(user_email, "CAL-Title") or "My Calendar",
+            "icon": google_sheets.get_cell_value(user_email, "CAL-Icon"),
+            "background_image": google_sheets.get_cell_value(user_email, "CAL-BackgroundImage"),
+            "bio_text": google_sheets.get_cell_value(user_email, "CAL-BioText"),
+        }
+
+        data = {
+            'total_raised': 1000  # Replace with actual data retrieval logic
+        }
+
+        return render_template(
+            'calendar.html',
+            data=data,
+            user_signed_in="FALSE",
+            user_has_token="TRUE",
+            token_type="DOM",
+            cal_title=customizations["title_text"],
+            customizations=customizations
+        )
+    except KeyError:
+        return "Invalid token", 404
